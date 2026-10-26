@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">支付记账</string>
+    <string name="app_name">记账</string>
     <string name="notify_service_label">支付弹窗自动记账服务</string>
 
     <!-- 底部导航 -->
@@ -9,39 +9,48 @@
     <string name="tab_rules">规则</string>
     <string name="tab_stats">分析</string>
 
-    <!-- 页面标题 -->
-    <string name="dir_a_title">方向 A · 粘贴支付通知 / 手动录入 / 截图</string>
-    <string name="dir_a_manual">手动录入一笔支出</string>
-    <string name="dir_b_title">方向 B · 弹窗自动记账(通知监听)</string>
+    <!-- 记账页 -->
+    <string name="book_title">记一笔账</string>
+    <string name="book_subtitle">记录你的每一笔支出</string>
+    <string name="section_manual">手动录入</string>
+    <string name="section_parse">粘贴支付通知</string>
+    <string name="hint_amount">金额</string>
+    <string name="hint_merchant">商户（可空）</string>
+    <string name="btn_manual_add">保存</string>
+
+    <!-- 支付通知解析 -->
+    <string name="paste_hint">粘贴支付通知，如：微信支付 支付成功 ¥23.50 XX便利店 12:47</string>
+    <string name="btn_smart_parse">解析并记账</string>
+    <string name="btn_pick_screenshot">截图识别</string>
+
+    <!-- 账单页 -->
     <string name="bill_title">账单</string>
-    <string name="rules_title">商户 → 分类 规则</string>
-    <string name="learned_rules_title">已有学习规则</string>
-    <string name="stats_title">统计看板</string>
-    <string name="analytics_title">本月分析</string>
-    <string name="ai_title">AI 判断器设置</string>
-    <string name="self_test_title">内置自检</string>
-    <string name="ledger_title">最近记录(点一行改分类)</string>
-
-    <!-- 输入提示 -->
-    <string name="paste_hint">粘贴支付通知, 如: 微信支付 支付成功 ¥23.50 XX便利店 12:47</string>
-    <string name="hint_amount">金额(元)</string>
-    <string name="hint_merchant">商户(可空)</string>
-    <string name="hint_rule_merchant">商户名</string>
-    <string name="hint_bill_search">搜索商户/备注…</string>
-    <string name="hint_llm_endpoint">OpenAI 兼容端点(https://…)</string>
-    <string name="hint_llm_key">API Key</string>
-    <string name="hint_llm_model">模型名</string>
-
-    <!-- 按钮 -->
-    <string name="btn_smart_parse">AI 判断并记账</string>
-    <string name="btn_pick_screenshot">选择支付截图</string>
-    <string name="btn_manual_add">手动入账</string>
-    <string name="btn_rule_save">添加规则</string>
+    <string name="hint_bill_search">搜索商户 / 备注 / 分类</string>
     <string name="btn_csv">导出 CSV</string>
-    <string name="btn_open_listener">开启通知监听(系统设置)</string>
-    <string name="btn_llm_save">保存 AI 设置</string>
-    <string name="btn_run_self_test">运行 9 例自检</string>
+    <string name="stats_title">本月支出</string>
+    <string name="ledger_title">最近记录</string>
 
-    <!-- 文案 -->
-    <string name="ledger_hint">放弃的「其他信息」不会出现在这里</string>
+    <!-- 规则页 -->
+    <string name="rules_title">规则</string>
+    <string name="rules_subtitle">让系统自动识别账单，准确归类</string>
+    <string name="section_add_rule">新增规则</string>
+    <string name="hint_rule_merchant">商户名或关键词</string>
+    <string name="btn_rule_save">添加规则</string>
+    <string name="learned_rules_title">我的规则</string>
+
+    <!-- 分析页 -->
+    <string name="analytics_title">分析</string>
+    <string name="stats_detail">支出概览</string>
+    <string name="section_settings">记账设置</string>
+    <string name="listener_title">通知监听</string>
+    <string name="listener_desc">已开启 · 监听支付通知</string>
+    <string name="listener_desc_off">未开启 · 点「开启通知监听」授权</string>
+    <string name="btn_open_listener">开启通知监听</string>
+    <string name="ai_title">AI 智能识别</string>
+    <string name="hint_llm_endpoint">接口地址（https://…）</string>
+    <string name="hint_llm_key">API 密钥</string>
+    <string name="hint_llm_model">模型</string>
+    <string name="btn_llm_save">保存设置</string>
+    <string name="self_test_title">系统自检</string>
+    <string name="btn_run_self_test">运行自检</string>
 </resources>

@@ -1,4 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#1A73E8</color>
+    <!-- iOS Premium Minimalism design tokens -->
+    <color name="app_background">#F5F6F4</color>
+    <color name="surface_primary">#FFFFFF</color>
+    <color name="surface_secondary">#F0F3F0</color>
+    <color name="surface_pressed">#E8EEEA</color>
+
+    <color name="text_primary">#202923</color>
+    <color name="text_secondary">#737D76</color>
+    <color name="text_tertiary">#929B94</color>
+
+    <color name="accent_primary">#236B55</color>
+    <color name="accent_pressed">#195542</color>
+    <color name="accent_soft">#E5F0EA</color>
+
+    <color name="border_subtle">#E7EBE7</color>
+    <color name="border_strong">#D7DED8</color>
+
+    <color name="expense_color">#236B55</color>
+    <color name="expense_soft">#E5F0EA</color>
+
+    <color name="danger_color">#C45454</color>
+    <color name="danger_soft">#F8EAEA</color>
+
+    <!-- 分类图标背景(浅色圆底) -->
+    <color name="cat_dining_bg">#F3EFE6</color>
+    <color name="cat_shopping_bg">#F8E7EC</color>
+    <color name="cat_transport_bg">#E6EEF7</color>
+    <color name="cat_life_bg">#EAF3EA</color>
+    <color name="cat_other_bg">#E7EBEE</color>
+
+    <color name="tab_inactive">#929B94</color>
+    <color name="ic_launcher_background">#236B55</color>
 </resources>

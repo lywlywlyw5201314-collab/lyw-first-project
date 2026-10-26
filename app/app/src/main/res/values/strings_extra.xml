@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 保留的兼容 key(旧布局/代码仍引用) -->
+    <string name="dir_a_title"></string>
+    <string name="dir_a_manual"></string>
+    <string name="dir_b_title"></string>
+    <string name="ledger_hint"></string>
+    <string name="stats_title_old">支出概览</string>
+</resources>

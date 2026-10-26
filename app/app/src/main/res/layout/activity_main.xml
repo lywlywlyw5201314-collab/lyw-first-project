@@ -2,15 +2,17 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@color/app_background">
 
-    <!-- 页面容器(四个页面切换) -->
+    <!-- 四个页面容器 -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:background="@color/app_background">
 
-        <!-- ========== 页面 1: 记账 (Paste + Manual + Screenshot) ========== -->
+        <!-- ===== 记账页 ===== -->
         <ScrollView
             android:id="@+id/pageBook"
             android:layout_width="match_parent"
@@ -21,44 +23,192 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="14dp">
+                android:padding="18dp"
+                android:background="@color/surface_primary">
 
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="@string/dir_a_title" style="@style/SectionTitle" />
+                <TextView style="@style/PageTitle" android:text="@string/book_title" />
+                <TextView style="@style/PageSubtitle" android:text="@string/book_subtitle" />
 
+                <!-- 金额作为视觉重点 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@color/surface_secondary"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="¥"
+                        android:textSize="30sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/accent_primary"
+                        android:layout_marginEnd="8dp" />
+
+                    <EditText
+                        android:id="@+id/etManualAmount"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:background="@null"
+                        android:hint="@string/hint_amount"
+                        android:inputType="numberDecimal"
+                        android:textSize="30sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_tertiary" />
+                </LinearLayout>
+
+                <!-- 商户 -->
                 <EditText
-                    android:id="@+id/etPaste"
+                    android:id="@+id/etManualMerchant"
+                    style="@style/Field"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/paste_hint"
-                    android:inputType="textMultiLine"
-                    android:minLines="2" />
+                    android:layout_marginTop="10dp"
+                    android:hint="@string/hint_merchant"
+                    android:inputType="text" />
 
+                <!-- 保存(主要按钮) -->
+                <Button
+                    android:id="@+id/btnManualAdd"
+                    style="@style/BtnPrimary"
+                    android:layout_marginTop="18dp"
+                    android:text="@string/btn_manual_add" />
+
+                <!-- 辅助入口: 解析 / 截图 -->
+                <!-- 常用分类(仅视觉, 沿用现有分类) -->
                 <TextView
-                    android:id="@+id/tvPasteNote"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="13sp"
-                    android:textColor="?android:textColorSecondary"
-                    android:visibility="gone" />
+                    style="@style/SectionTitle"
+                    android:layout_marginTop="24dp"
+                    android:text="常用分类" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
 
-                    <Button
-                        android:id="@+id/btnParse"
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:layout_marginTop="10dp">
+                        <View
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@color/cat_dining_bg" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="餐饮"
+                            android:textSize="12sp"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginTop="6dp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:layout_marginTop="10dp">
+                        <View
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@color/cat_shopping_bg" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="购物"
+                            android:textSize="12sp"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginTop="6dp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:layout_marginTop="10dp">
+                        <View
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@color/cat_transport_bg" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="交通"
+                            android:textSize="12sp"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginTop="6dp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:layout_marginTop="10dp">
+                        <View
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@color/cat_other_bg" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="其他"
+                            android:textSize="12sp"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginTop="6dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                                <TextView style="@style/SectionTitle" android:text="@string/section_parse" />
+
+                <EditText
+                    android:id="@+id/etPaste"
+                    style="@style/Field"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minLines="2"
+                    android:gravity="top"
+                    android:hint="@string/paste_hint"
+                    android:inputType="textMultiLine" />
+
+                <TextView
+                    android:id="@+id/tvPasteNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginTop="6dp"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp">
+
+                    <Button
+                        android:id="@+id/btnParse"
+                        style="@style/BtnPrimary"
+                        android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_marginEnd="6dp"
                         android:text="@string/btn_smart_parse" />
 
                     <Button
                         android:id="@+id/btnPickScreenshot"
+                        style="@style/BtnSecondary"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginStart="6dp"
                         android:text="@string/btn_pick_screenshot" />
@@ -69,47 +219,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textSize="13sp"
-                    android:textColor="?android:textColorSecondary" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/dir_a_manual"
-                    style="@style/SectionTitle" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <EditText
-                        android:id="@+id/etManualAmount"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="6dp"
-                        android:hint="@string/hint_amount"
-                        android:inputType="numberDecimal" />
-
-                    <EditText
-                        android:id="@+id/etManualMerchant"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="6dp"
-                        android:hint="@string/hint_merchant"
-                        android:inputType="text" />
-                </LinearLayout>
-
-                <Button
-                    android:id="@+id/btnManualAdd"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/btn_manual_add" />
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone" />
             </LinearLayout>
         </ScrollView>
 
-        <!-- ========== 页面 2: 账单 (Ledger list + Stats + Search/Filter/CSV) ========== -->
+        <!-- ===== 账单页 ===== -->
         <ScrollView
             android:id="@+id/pageBill"
             android:layout_width="match_parent"
@@ -121,77 +237,100 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="14dp">
+                android:padding="18dp">
 
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="@string/bill_title" style="@style/SectionTitle" />
+                <TextView style="@style/PageTitle" android:text="@string/bill_title" />
 
+                <!-- 搜索框 -->
+                <EditText
+                    android:id="@+id/billSearch"
+                    style="@style/Field"
+                    android:layout_width="match_parent"
+                    android:hint="@string/hint_bill_search"
+                    android:background="@color/surface_primary"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp" />
+
+                <!-- 筛选 + CSV -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <EditText
-                        android:id="@+id/billSearch"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:hint="@string/hint_bill_search" />
-
-                    <Button
-                        android:id="@+id/btnCsv"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/btn_csv"
-                        android:layout_gravity="center_vertical" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical">
 
                     <Spinner
                         android:id="@+id/fCat"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:entries="@array/category_entries" />
+                        android:layout_height="38dp"
+                        android:entries="@array/category_entries"
+                        android:backgroundTint="@color/text_tertiary" />
 
                     <Spinner
                         android:id="@+id/fTime"
                         android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginStart="10dp"
+                        android:entries="@array/time_range_entries"
+                        android:backgroundTint="@color/text_tertiary" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="1px" />
+
+                    <Button
+                        android:id="@+id/btnCsv"
+                        style="@style/BtnSecondary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="@string/btn_csv" />
+                </LinearLayout>
+
+                <!-- 统计摘要(浅色分组, 非卡片) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@color/surface_secondary"
+                    android:padding="16dp"
+                    android:layout_marginTop="14dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:entries="@array/time_range_entries" />
+                        android:text="@string/stats_title"
+                        android:textSize="13sp"
+                        android:textColor="@color/text_secondary" />
+
+                    <TextView
+                        android:id="@+id/tvMonthTotal"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="¥0.00"
+                        android:textSize="34sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/accent_primary"
+                        android:fontFamily="sans-serif"
+                        android:layout_marginTop="4dp" />
                 </LinearLayout>
 
                 <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/stats_title"
-                    style="@style/SectionTitle" />
-
-                <TextView
-                    android:id="@+id/tvStats"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="13sp"
-                    android:lineSpacingExtra="4dp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/ledger_title"
-                    style="@style/SectionTitle" />
+                    style="@style/SectionTitle"
+                    android:text="@string/ledger_title" />
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvEntries"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:nestedScrollingEnabled="false" />
+                    android:nestedScrollingEnabled="false"
+                    android:background="@color/surface_primary" />
             </LinearLayout>
         </ScrollView>
 
-        <!-- ========== 页面 3: 规则 (Learned rules) ========== -->
+        <!-- ===== 规则页 ===== -->
         <ScrollView
             android:id="@+id/pageRules"
             android:layout_width="match_parent"
@@ -203,52 +342,51 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="14dp">
+                android:padding="18dp">
 
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="@string/rules_title" style="@style/SectionTitle" />
+                <TextView style="@style/PageTitle" android:text="@string/rules_title" />
+                <TextView style="@style/PageSubtitle" android:text="@string/rules_subtitle" />
 
-                <LinearLayout
+                <TextView style="@style/SectionTitle" android:text="@string/section_add_rule" />
+
+                <EditText
+                    android:id="@+id/etRuleMerchant"
+                    style="@style/Field"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:hint="@string/hint_rule_merchant"
+                    android:inputType="text" />
 
-                    <EditText
-                        android:id="@+id/etRuleMerchant"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:hint="@string/hint_rule_merchant" />
-
-                    <Spinner
-                        android:id="@+id/spRuleCat"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:entries="@array/category_entries" />
-                </LinearLayout>
+                <Spinner
+                    android:id="@+id/spRuleCat"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@color/surface_secondary"
+                    android:entries="@array/category_entries" />
 
                 <Button
                     android:id="@+id/btnRuleSave"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    style="@style/BtnPrimary"
+                    android:layout_marginTop="14dp"
                     android:text="@string/btn_rule_save" />
 
                 <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/learned_rules_title"
-                    style="@style/SectionTitle" />
+                    style="@style/SectionTitle"
+                    android:text="@string/learned_rules_title" />
 
                 <TextView
                     android:id="@+id/tvLearned"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textSize="13sp"
-                    android:lineSpacingExtra="3dp" />
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="6dp"
+                    android:textColor="@color/text_secondary"
+                    android:background="@color/surface_primary"
+                    android:padding="14dp" />
             </LinearLayout>
         </ScrollView>
 
-        <!-- ========== 页面 4: 分析 (Stats + AI Settings + Self-test + Listener) ========== -->
+        <!-- ===== 分析页 ===== -->
         <ScrollView
             android:id="@+id/pageStats"
             android:layout_width="match_parent"
@@ -260,144 +398,190 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="14dp">
+                android:padding="18dp">
 
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="@string/analytics_title" style="@style/SectionTitle" />
+                <TextView style="@style/PageTitle" android:text="@string/analytics_title" />
+
+                <TextView style="@style/SectionTitle" android:text="@string/stats_detail" />
 
                 <TextView
                     android:id="@+id/tvAnalytics"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textSize="13sp"
-                    android:lineSpacingExtra="4dp" />
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="5dp"
+                    android:textColor="@color/text_secondary"
+                    android:background="@color/surface_primary"
+                    android:padding="14dp" />
 
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="@string/dir_b_title" style="@style/SectionTitle" />
-
+                <!-- 记账设置分组 -->
                 <TextView
-                    android:id="@+id/tvListenerStatus"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="13sp"
-                    android:textColor="?android:textColorSecondary" />
-
-                <Button
-                    android:id="@+id/btnOpenListenerSettings"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/btn_open_listener" />
-
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="@string/ai_title" style="@style/SectionTitle" />
+                    style="@style/SectionTitle"
+                    android:text="@string/section_settings" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:orientation="vertical"
+                    android:background="@color/surface_primary"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/listener_title"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:id="@+id/tvListenerStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="13sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="4dp" />
+
+                    <Button
+                        android:id="@+id/btnOpenListenerSettings"
+                        style="@style/BtnSecondary"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/btn_open_listener" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/border_subtle"
+                        android:layout_marginTop="14dp"
+                        android:layout_marginBottom="14dp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/ai_title"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary" />
+
                     <EditText
                         android:id="@+id/etLlmEndpoint"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
+                        style="@style/Field"
+                        android:layout_width="match_parent"
+                        android:layout_marginTop="10dp"
                         android:hint="@string/hint_llm_endpoint"
                         android:singleLine="true" />
+
                     <EditText
                         android:id="@+id/etLlmKey"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
+                        style="@style/Field"
+                        android:layout_width="match_parent"
+                        android:layout_marginTop="8dp"
                         android:hint="@string/hint_llm_key"
                         android:singleLine="true" />
-                </LinearLayout>
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+
                     <EditText
                         android:id="@+id/etLlmModel"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
+                        style="@style/Field"
+                        android:layout_width="match_parent"
+                        android:layout_marginTop="8dp"
                         android:hint="@string/hint_llm_model"
                         android:singleLine="true" />
+
                     <Button
                         android:id="@+id/btnLlmSave"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/BtnPrimary"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="12dp"
                         android:text="@string/btn_llm_save" />
+
+                    <TextView
+                        android:id="@+id/tvLlmStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="8dp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/border_subtle"
+                        android:layout_marginTop="14dp"
+                        android:layout_marginBottom="14dp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/self_test_title"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary" />
+
+                    <Button
+                        android:id="@+id/btnSelfTest"
+                        style="@style/BtnSecondary"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/btn_run_self_test" />
+
+                    <TextView
+                        android:id="@+id/tvSelfTestResult"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="13sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="8dp" />
                 </LinearLayout>
-
-                <TextView
-                    android:id="@+id/tvLlmStatus"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="12sp"
-                    android:textColor="?android:textColorSecondary" />
-
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="@string/self_test_title" style="@style/SectionTitle" />
-
-                <Button
-                    android:id="@+id/btnSelfTest"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/btn_run_self_test" />
-
-                <TextView
-                    android:id="@+id/tvSelfTestResult"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="13sp"
-                    android:textColor="?android:textColorSecondary" />
             </LinearLayout>
         </ScrollView>
     </FrameLayout>
 
-    <!-- 底部四导航 -->
+    <!-- 底部导航(白色 + 轻顶边框, 图标+文字, 选中深绿) -->
     <LinearLayout
         android:id="@+id/tabBar"
         android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:orientation="horizontal"
-        android:background="#F5F5F7"
-        android:gravity="center"
-        android:paddingTop="4dp">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/surface_primary">
 
-        <Button
-            android:id="@+id/tabBook"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="@string/tab_book"
-            android:textSize="11sp"
-            android:background="?android:selectableItemBackground" />
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/border_subtle" />
 
-        <Button
-            android:id="@+id/tabBill"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="@string/tab_bill"
-            android:textSize="11sp"
-            android:background="?android:selectableItemBackground" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:paddingBottom="6dp"
+            android:gravity="center">
 
-        <Button
-            android:id="@+id/tabRules"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="@string/tab_rules"
-            android:textSize="11sp"
-            android:background="?android:selectableItemBackground" />
+            <Button
+                android:id="@+id/tabBook"
+                style="@style/TabItem"
+                android:text="@string/tab_book"
+                android:textColor="@color/tab_inactive" />
 
-        <Button
-            android:id="@+id/tabStats"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="@string/tab_stats"
-            android:textSize="11sp"
-            android:background="?android:selectableItemBackground" />
+            <Button
+                android:id="@+id/tabBill"
+                style="@style/TabItem"
+                android:text="@string/tab_bill"
+                android:textColor="@color/tab_inactive" />
+
+            <Button
+                android:id="@+id/tabRules"
+                style="@style/TabItem"
+                android:text="@string/tab_rules"
+                android:textColor="@color/tab_inactive" />
+
+            <Button
+                android:id="@+id/tabStats"
+                style="@style/TabItem"
+                android:text="@string/tab_stats"
+                android:textColor="@color/tab_inactive" />
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>

@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity() {
 
     // 账单页
     private lateinit var billSearch: EditText
-    private lateinit var tvStats: TextView
+    private lateinit var tvMonthTotal: TextView
 
     // 规则页
     private lateinit var etRuleMerchant: EditText
@@ -124,7 +124,7 @@ class MainActivity : AppCompatActivity() {
         tvPasteNote = findViewById(R.id.tvPasteNote)
         tvShotNote = findViewById(R.id.tvShotNote)
         billSearch = findViewById(R.id.billSearch)
-        tvStats = findViewById(R.id.tvStats)
+        tvMonthTotal = findViewById(R.id.tvMonthTotal)
         etRuleMerchant = findViewById(R.id.etRuleMerchant)
         spRuleCat = findViewById(R.id.spRuleCat)
         tvLearned = findViewById(R.id.tvLearned)
@@ -202,7 +202,7 @@ class MainActivity : AppCompatActivity() {
         tabs.forEachIndexed { i, btn ->
             btn.setAllCaps(false)
             btn.setTextColor(
-                if (i == index) 0xFF1A73E8.toInt() else 0xFF666666.toInt()
+                if (i == index) 0xFF236B55.toInt() else 0xFF929B94.toInt()
             )
         }
         if (index == 1) reload()
@@ -216,7 +216,7 @@ class MainActivity : AppCompatActivity() {
         val text = intent?.getStringExtra(TestCommandReceiver.EXTRA_TEST_PASTE_TEXT) ?: return
         if (text.isEmpty()) return
         etPaste.setText(text)
-        tvPasteNote.text = "已载入测试粘贴文本, 点「AI 判断并记账」继续"
+        tvPasteNote.text = "已载入支付通知, 点「解析并记账」继续"
         tvPasteNote.visibility = View.VISIBLE
     }
 
@@ -268,7 +268,7 @@ class MainActivity : AppCompatActivity() {
                 "商户: " + (e.merchant ?: "未识别") + "\n" +
                 "分类: " + catLabel + " (" + (e.via ?: "rule") + ")"
             )
-            .setPositiveButton("入账") { _, _ ->
+            .setPositiveButton("保存") { _, _ ->
                 confirmCurrent()
             }
             .setNegativeButton("下一条/放弃") { _, _ ->
@@ -276,7 +276,7 @@ class MainActivity : AppCompatActivity() {
                 if (confirmIdx < pendingKeeps.size) {
                     showConfirmSheet()
                 } else {
-                    tvPasteNote.text = "共入账 " + pendingKeeps.size + " 笔, 放弃 " + pendingDiscards.size + " 条"
+                    tvPasteNote.text = "已入账 " + pendingKeeps.size + " 笔, 忽略 " + pendingDiscards.size + " 条"
                     tvPasteNote.visibility = View.VISIBLE
                     etPaste.setText("")
                     reload()
@@ -363,18 +363,18 @@ class MainActivity : AppCompatActivity() {
     private fun reloadListenerStatus() {
         val enabled = NotificationManagerCompat.getEnabledListenerPackages(this).contains(packageName)
         tvListenerStatus.text = if (enabled) {
-            "已开启: 带支付关键词的弹窗会自动识别入账, 其他信息直接放弃"
+            "已开启: 支付通知会自动识别入账, 其他信息自动忽略"
         } else {
-            "未开启: 点右侧按钮授权(系统设置 → 通知 → 通知使用权), 方向 B 才生效"
+            "未开启: 点「开启通知监听」授权, 通知功能才会生效"
         }
     }
 
     private fun reloadLlmStatus() {
         val cfg = LlmConfig.load(applicationContext)
         tvLlmStatus.text = if (cfg.isEnabled) {
-            "AI 判断器: 已启用(模型 " + cfg.model + ")"
+            "智能识别: 已启用(模型 " + cfg.model + ")"
         } else {
-            "AI 判断器: 未配置, 当前全部由本地规则判断兜底"
+            "智能识别: 未配置, 当前由本地规则自动判断"
         }
     }
 
@@ -434,12 +434,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun reload() {
         val q = billSearch.text.toString().trim()
+        tvMonthTotal.text = fmt(repo.sumBetween(TimeUtil.firstOfMonth(), TimeUtil.todayDay()))
         val all = repo.allEntries()
         val filtered = if (q.isEmpty()) all else all.filter {
             (it.merchant ?: "").contains(q, true) || (it.raw ?: "").contains(q, true)
         }
         adapter.entries = filtered
-        tvStats.text = buildStats()
         tvLearned.text = buildLearnedText()
         tvAnalytics.text = buildStats()
     }
