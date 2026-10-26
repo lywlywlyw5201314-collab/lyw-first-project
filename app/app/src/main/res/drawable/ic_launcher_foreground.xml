@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 前景: 简化账本笔形图标(向量), 白底圆角衬在蓝色背景上 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,34 h28 a4,4 0 0 1 4,4 v32 a4,4 0 0 1 -4,4 h-28 a4,4 0 0 1 -4,-4 v-32 a4,4 0 0 1 4,-4 z" />
+    <path
+        android:fillColor="#1A73E8"
+        android:pathData="M46,46 h16 v5 h-16 z M46,56 h16 v5 h-16 z M46,66 h9 v5 h-9 z" />
+</vector>

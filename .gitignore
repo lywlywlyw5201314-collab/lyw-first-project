@@ -1,35 +1,70 @@
-# Gradle files
+# 编译产物 / 缓存
+app/app/build/
+**/build/
 .gradle/
-build/
-.kotlin/
-
-# Local configuration file (sdk path, etc)
+**/*.iml
 local.properties
 
-# Log/OS Files
-*.log
+# 测试产物 / 大文件
+verify/_aarx/
+verify/_aarc/
+verify/_apk/
+verify/app-debug-latest.apk
+verify/build*.log
+**/apkx/
+*.aar
+*.jar
 
-# Android Studio generated files and folders
-captures/
-.externalNativeBuild/
-.cxx/
-*.aab
-*.apk
-output-metadata.json
+# 密钥 / 敏感（绝不让 LLM key、数据库进仓库）
+*.db
+*.db-journal
+local_db/
+secrets/
+*.env
+config/local_prefs*
 
-# IntelliJ
-*.iml
+# 日志大文件
+logs/*.pdf
+# 保留 logs 目录本身
+!logs/
+
+# IDE / OS
 .idea/
-misc.xml
-deploymentTargetDropDown.xml
-render.experimental.xml
+.DS_Store
+Thumbs.db
 
-# Keystore files
-*.jks
-*.keystore
+# verify 目录下的解压/调试产物(不入库)
+verify/c17_extract/
+verify/co_extract/
+verify/_aarx/
+verify/_aarc/
+verify/_apk/
+verify/aar_x/
+verify/*.log
+verify/*.txt
+verify/*.xml
+verify/*.ps1
+verify/*.py
+verify/*.json
+verify/_*.txt
+verify/tmp/
 
-# Google Services (e.g. APIs or Firebase)
-google-services.json
-
-# Android Profiling
-*.hprof
+# 顶层调试杂项
+.srv.js
+.write_test.txt
+boot_wait.log
+logcat_live.log
+rebuild_test.log
+run.bat
+run_commands.ps1
+run_py.py
+run_task.py
+runner_main.py
+run_all.py
+run_junit.py
+boot_verify.py
+rebuild_test.py
+_gen_pdf.py
+_gen_pdf2.py
+_claude_readonly_dump_app.txt
+_claude_readonly_dump_web.txt
