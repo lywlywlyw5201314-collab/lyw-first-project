@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="category_entries">
+        <item>餐饮</item>
+        <item>购物</item>
+        <item>交通</item>
+        <item>生活</item>
+        <item>其他</item>
+    </string-array>
+    <string-array name="time_range_entries">
+        <item>近 7 天</item>
+        <item>近 30 天</item>
+        <item>全部</item>
+    </string-array>
+</resources>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>通知记账</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="phone">
+  <main class="pages">
+
+    <!-- ① 记账 -->
+    <section class="page active" id="page-book">
+      <header class="page-head">
+        <div class="page-title"><h1>通知记账</h1><p>让每一笔消费都有记录</p></div>
+        <button class="icon-btn" id="btnSettings" aria-label="设置">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 15a3 3 0 100-6 3 3 0 000 6zm7.4-2.6l1.5-.4a.5.5 0 01.5.2l.7 1-.7 1a.5.5 0 01-.5.2l-1.5-.4M4.1 12l-1.5.4a.5.5 0 01-.5-.2l-.7-1 .7-1a.5.5 0 01.5-.2L4.1 12m8-9.5l.4 1.5a.5.5 0 01-.2.5l-1 .7-1-.7a.5.5 0 01-.2-.5l.4-1.5M13 21.5l-.4-1.5a.5.5 0 01.2-.5l1-.7 1 .7a.5.5 0 01.2.5l-.4 1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+        </button>
+      </header>
+      <div class="status-line"><span class="dot"></span>数据仅保存在本地 · 不上云</div>
+      <div class="card">
+        <div class="record-hero">
+          <div class="rh-text"><b>记下一笔</b><span>从支付通知或截图快速记账</span></div>
+          <svg viewBox="0 0 24 24" class="hero-ic" width="38" height="38"><rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3 9h18" stroke="currentColor" stroke-width="1.5"/></svg>
+        </div>
+        <div class="seg" role="tablist">
+          <button class="seg-btn active" data-mode="text">粘贴支付通知</button>
+          <button class="seg-btn" data-mode="shot">导入支付截图</button>
+        </div>
+        <div class="pane" id="paneText">
+          <textarea id="pushText" rows="2" placeholder="例如：微信支付 支付成功 ¥23.50 XX便利店 12:47"></textarea>
+          <button class="btn-primary block" id="btnParse">解析并确认</button>
+          <details class="fold"><summary>常见示例</summary>
+            <ul id="examples" class="examples">
+              <li data-text="微信支付 支付成功 ¥23.50 XX便利店 12:47">便利店消费</li>
+              <li data-text="支付宝 向美团外卖支付 15.00元">美团外卖</li>
+              <li data-text="滴滴出行 订单完成 车费 12.50元 2026-10-20 08:05">滴滴打车</li>
+              <li data-text="中国移动 话费账单 支付成功 29.00元">话费充值</li>
+              <li data-text="微信 收到好友转账 ¥100.00">收入转账（应丢弃）</li>
+              <li data-text="系统更新完成">非支付通知（应丢弃）</li>
+            </ul>
+          </details>
+        </div>
+        <div class="pane" id="paneShot" hidden>
+          <label class="file-btn"><input type="file" id="shotFile" accept="image/*" multiple>选择支付截图</label>
+          <div id="shotPreviews" class="shot-previews"></div>
+          <button class="btn-primary block" id="btnOcr">识别并确认</button>
+        </div>
+      </div>
+      <div class="card" id="recentCard" hidden>
+        <div class="recent">
+          <span class="r-ic" id="recentIc">微</span>
+          <div class="r-main"><b id="recentM">—</b><span id="recentSub">—</span></div>
+          <div class="r-right"><b id="recentA">-¥0.00</b><span id="recentT">—</span></div>
+        </div>
+        <button class="link" id="btnAllBill">查看全部账单 ›</button>
+      </div>
+    </section>
+
+    <!-- ② 账单 -->
+    <section class="page" id="page-bill">
+      <header class="page-head solid"><h1>账单</h1>
+        <button class="icon-btn" id="btnBillTools">
+          <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+        </button>
+      </header>
+      <div class="bill-toolbar">
+        <input id="billSearch" class="search" type="search" placeholder="搜索商户、关键词…">
+        <div class="chips">
+          <button class="chip" id="fTime">近30天 ▾</button>
+          <button class="chip" id="fCat">分类 ▾</button>
+          <button class="chip" id="fSrc">支付方式 ▾</button>
+        </div>
+      </div>
+      <div class="bill-summary" id="billSummary" hidden></div>
+      <div id="billGroups" class="bill-groups"></div>
+      <div class="menu" id="billMenu" hidden><button class="menu-item" id="btnCsv">导出 CSV</button></div>
+    </section>
+
+    <!-- ③ 规则 -->
+    <section class="page" id="page-rules">
+      <header class="page-head solid"><h1>自动分类规则</h1></header>
+      <div class="rule-stat" id="ruleStat"></div>
+      <button class="btn-primary block" id="btnNewRule">＋ 新建规则</button>
+      <div id="ruleList" class="rule-list"></div>
+    </section>
+
+    <!-- ④ 分析 -->
+    <section class="page" id="page-stats">
+      <header class="page-head solid"><h1>消费分析</h1></header>
+      <div class="seg small" id="statRange">
+        <button class="seg-btn active" data-range="week">本周</button>
+        <button class="seg-btn" data-range="month">本月</button>
+        <button class="seg-btn" data-range="all">全部</button>
+      </div>
+      <div class="card stat-card" id="statMain"></div>
+      <div class="card"><h3>分类占比</h3><div id="statCats"></div></div>
+      <div class="card"><h3>支出趋势（近 7 天）</h3><div id="statDays" class="daybars"></div></div>
+      <div class="card stat-insight" id="statInsight"></div>
+    </section>
+
+  </main>
+  <footer class="foot">数据仅存于本机 localStorage · 纯前端 · 无网络请求</footer>
+  <nav class="tabbar">
+    <button data-page="book" class="active"><svg viewBox="0 0 24 24" width="24" height="24"><rect x="4" y="3" width="16" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.7"/></svg>记账</button>
+    <button data-page="bill"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M5 4h14v16H5z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.7"/></svg>账单</button>
+    <button data-page="rules"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 7h16M4 12h10M4 17h13" stroke="currentColor" stroke-width="1.7" fill="none"/></svg>规则</button>
+    <button data-page="stats"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 20V10M10 20V4M16 20v-7M20 20H4" stroke="currentColor" stroke-width="1.7" fill="none"/></svg>分析</button>
+  </nav>
+</div>
+
+<!-- 确认入账 / 编辑账单 弹层 -->
+<div class="sheet" id="billSheet" hidden>
+  <div class="sheet-head"><button class="icon-btn" data-close>‹</button><h2 id="sheetTitle">确认入账</h2></div>
+  <div class="sheet-body">
+    <div class="s-ch"><span class="ch-ic" id="shIc">微</span><div><b id="shName">微信支付</b><span id="shTag">支付成功</span></div></div>
+    <div class="s-amt" id="shAmt">¥0.00</div>
+    <div class="s-grid">
+      <div><label>商户名称</label><input id="shMerchant" class="in"></div>
+      <div><label>支付方式</label><input id="shSource" class="in"></div>
+    </div>
+    <div class="s-time"><label>交易时间</label><input id="shTime" class="in"></div>
+    <div class="s-cat"><label>系统建议分类</label><div class="cat-pick" id="catPick"></div><div class="rule-hint" id="ruleHint"></div></div>
+    <div class="s-note"><label>备注</label><input id="shNote" class="in" placeholder="选填"></div>
+  </div>
+  <div class="sheet-foot">
+    <button class="btn-danger" id="btnDeleteBill" hidden>删除账单</button>
+    <button class="btn-primary block" id="btnSheetSave">确认入账</button>
+  </div>
+</div>
+
+<!-- 规则编辑弹层 -->
+<div class="sheet" id="ruleSheet" hidden>
+  <div class="sheet-head"><button class="icon-btn" data-close>‹</button><h2>新建规则</h2></div>
+  <div class="sheet-body">
+    <div class="s-cat"><label>匹配条件（商户名包含）</label><input id="ruleMerchant" class="in" placeholder="例如：便利店"></div>
+    <div class="s-cat"><label>分类结果</label><div class="cat-pick" id="ruleCatPick"></div></div>
+  </div>
+  <div class="sheet-foot"><button class="btn-primary block" id="btnRuleSave">保存规则</button></div>
+</div>
+
+<!-- 设置与诊断 -->
+<div class="sheet" id="setSheet" hidden>
+  <div class="sheet-head"><button class="icon-btn" data-close>‹</button><h2>设置与诊断</h2></div>
+  <div class="sheet-body">
+    <h3>数据与存储</h3>
+    <div class="set-row"><span>本地数据状态</span><b id="setStorageInfo">—</b></div>
+    <h3>支付信息识别</h3>
+    <div class="set-row"><span>自动识别授权</span><label class="switch"><input type="checkbox" id="consentToggle"><i></i></label></div>
+    <div class="set-privacy">识别仅在本机进行；非支付内容一律丢弃、不展示、不落库；数据不出本机。</div>
+    <h3>数据管理</h3>
+    <div class="set-row"><button class="link" id="btnSetCsv">导出 CSV ›</button></div>
+    <div class="set-row danger"><button class="link" id="btnSetReset">清空演示数据 ›</button></div>
+    <h3>应用自检</h3>
+    <div class="set-row"><span>运行自检</span><b id="selfRunState">未运行</b></div>
+    <button class="btn-ghost block" id="btnSelfRun">运行自检</button>
+    <div id="selfResult" class="self-result"></div>
+    <h3>关于</h3>
+    <div class="set-row"><span>版本</span><b>1.0.0</b></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="parser.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
