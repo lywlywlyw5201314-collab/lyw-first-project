@@ -1,4 +1,4 @@
-﻿package com.example.notifyledger
+package com.example.notifyledger
 
 import android.content.Intent
 import android.net.Uri
@@ -6,6 +6,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Base64
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -56,11 +57,22 @@ class MainActivity : AppCompatActivity() {
     // 账单页
     private lateinit var billSearch: EditText
     private lateinit var tvMonthTotal: TextView
+    private lateinit var tvWeekTotal: TextView
+    private lateinit var tvMonthTotalStats: TextView
+    private lateinit var tvCountTotal: TextView
+    private lateinit var tvBillCount: TextView
+    private lateinit var weeklyBarsContainer: LinearLayout
 
     // 规则页
     private lateinit var etRuleMerchant: EditText
     private lateinit var spRuleCat: Spinner
     private lateinit var tvLearned: TextView
+
+    // 账单页筛选
+    private lateinit var fCat: Spinner
+    private lateinit var fTime: Spinner
+    private lateinit var tvRangeTotal: TextView
+    private lateinit var tvRangeCount: TextView
 
     // 分析页
     private lateinit var tvAnalytics: TextView
@@ -79,10 +91,8 @@ class MainActivity : AppCompatActivity() {
     private var pendingKeeps = mutableListOf<PayNotifyParser.JudgeResult>()
     private var pendingDiscards = mutableListOf<Pair<String, String>>()
     private var confirmIdx = 0
-    private var curCat = "other"
 
     private val CAT_LABELS = listOf("餐饮", "购物", "交通", "生活", "其他")
-    private val CAT_KEYS = listOf("dining", "shopping", "transport", "life", "other")
 
     private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri == null) return@registerForActivityResult
@@ -91,7 +101,9 @@ class MainActivity : AppCompatActivity() {
             val results = withContext(Dispatchers.IO) {
                 OcrHelper.recognizeAndJudge(this@MainActivity, uri, repo.learnedRules())
             }
-            if (results.isEmpty()) {
+            if (results == null) {
+                tvShotNote.text = "本机 OCR 引擎不可用(模拟器缺 Google 组件), 截图识别需在真机或带 GMS 的镜像运行"
+            } else if (results.isEmpty()) {
                 tvShotNote.text = "截图中未识别到可入账的支付信息(非支付内容已丢弃, 不保存)"
             } else {
                 var count = 0
@@ -125,9 +137,18 @@ class MainActivity : AppCompatActivity() {
         tvShotNote = findViewById(R.id.tvShotNote)
         billSearch = findViewById(R.id.billSearch)
         tvMonthTotal = findViewById(R.id.tvMonthTotal)
+        tvWeekTotal = findViewById(R.id.tvWeekTotal)
+        tvMonthTotalStats = findViewById(R.id.tvMonthTotalStats)
+        tvCountTotal = findViewById(R.id.tvCountTotal)
+        tvBillCount = findViewById(R.id.tvBillCount)
+        weeklyBarsContainer = findViewById(R.id.weeklyBarsContainer)
         etRuleMerchant = findViewById(R.id.etRuleMerchant)
         spRuleCat = findViewById(R.id.spRuleCat)
         tvLearned = findViewById(R.id.tvLearned)
+        fCat = findViewById(R.id.fCat)
+        fTime = findViewById(R.id.fTime)
+        tvRangeTotal = findViewById(R.id.tvMonthTotal)
+        tvRangeCount = findViewById(R.id.tvBillCount)
         tvAnalytics = findViewById(R.id.tvAnalytics)
         tvListenerStatus = findViewById(R.id.tvListenerStatus)
         tvLlmStatus = findViewById(R.id.tvLlmStatus)
@@ -162,15 +183,33 @@ class MainActivity : AppCompatActivity() {
             override fun afterTextChanged(s: android.text.Editable?) { reload() }
         })
         findViewById<Button>(R.id.btnCsv).setOnClickListener { exportCsv() }
+        fCat.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: android.widget.AdapterView<*>?, v: android.view.View?, pos: Int, id: Long) { reload() }
+            override fun onNothingSelected(p: android.widget.AdapterView<*>?) {}
+        }
+        fTime.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: android.widget.AdapterView<*>?, v: android.view.View?, pos: Int, id: Long) { reload() }
+            override fun onNothingSelected(p: android.widget.AdapterView<*>?) {}
+        }
 
         // 规则页
         findViewById<Button>(R.id.btnRuleSave).setOnClickListener { saveRule() }
+        val ruleAddCard = findViewById<android.view.View>(R.id.ruleAddCard)
+        ruleAddCard.setOnClickListener { etRuleMerchant.requestFocus() }
+        val spRuleType = findViewById<Spinner>(R.id.spRuleType)
+        spRuleType.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: android.widget.AdapterView<*>?, v: android.view.View?, pos: Int, id: Long) {
+                spRuleCat.visibility = if (pos == 1) android.view.View.GONE else android.view.View.VISIBLE
+            }
+            override fun onNothingSelected(p: android.widget.AdapterView<*>?) {}
+        }
 
         // 分析页
         findViewById<Button>(R.id.btnOpenListenerSettings).setOnClickListener {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
         findViewById<Button>(R.id.btnLlmSave).setOnClickListener { saveLlmConfig() }
+        findViewById<Button>(R.id.btnLlmClear).setOnClickListener { clearLlmConfig() }
         findViewById<Button>(R.id.btnSelfTest).setOnClickListener { runSelfTest() }
 
         requestPostNotificationPermission()
@@ -199,11 +238,20 @@ class MainActivity : AppCompatActivity() {
             findViewById<Button>(R.id.tabRules),
             findViewById<Button>(R.id.tabStats)
         )
+        val tabIcons = listOf(R.drawable.ic_tab_book, R.drawable.ic_tab_bill, R.drawable.ic_tab_rules, R.drawable.ic_tab_stats)
         tabs.forEachIndexed { i, btn ->
             btn.setAllCaps(false)
             btn.setTextColor(
                 if (i == index) 0xFF236B55.toInt() else 0xFF929B94.toInt()
             )
+            val icon = androidx.core.content.ContextCompat.getDrawable(this, tabIcons[i])
+            if (icon != null) {
+                val tint = if (i == index) 0xFF236B55.toInt() else 0xFF929B94.toInt()
+                val filtered = androidx.core.graphics.drawable.DrawableCompat.wrap(icon)
+                androidx.core.graphics.drawable.DrawableCompat.setTint(filtered, tint)
+                btn.setCompoundDrawablesWithIntrinsicBounds(filtered, null, null, null)
+                btn.compoundDrawablePadding = (6 * resources.displayMetrics.density).toInt()
+            }
         }
         if (index == 1) reload()
         if (index == 2) reloadRulesPage()
@@ -213,7 +261,13 @@ class MainActivity : AppCompatActivity() {
     /* ============ 测试后门: 由 TestCommandReceiver 广播驱动(仅模拟器首版验证用) ============ */
 
     private fun maybeLoadTestPasteFromIntent() {
-        val text = intent?.getStringExtra(TestCommandReceiver.EXTRA_TEST_PASTE_TEXT) ?: return
+        var text = intent?.getStringExtra(TestCommandReceiver.EXTRA_TEST_PASTE_TEXT) ?: ""
+        if (text.isEmpty()) {
+            val b64 = intent?.getStringExtra("test_paste_text_b64")
+            if (!b64.isNullOrEmpty()) {
+                text = String(Base64.decode(b64, Base64.DEFAULT), Charsets.UTF_8)
+            }
+        }
         if (text.isEmpty()) return
         etPaste.setText(text)
         tvPasteNote.text = "已载入支付通知, 点「解析并记账」继续"
@@ -242,8 +296,14 @@ class MainActivity : AppCompatActivity() {
         val rules = repo.learnedRules()
         pendingKeeps.clear()
         pendingDiscards.clear()
+        val ignoreRules = rules.filter { it.merchant.startsWith("@ignore:") }.map { it.merchant.removePrefix("@ignore:") }
         (if (segs.isNotEmpty()) segs else listOf(text)).forEach { seg ->
-            val v = PayNotifyParser.judge(seg, rules)
+            val hitIgnore = ignoreRules.firstOrNull { seg.contains(it, ignoreCase = true) }
+            if (hitIgnore != null) {
+                pendingDiscards.add(seg to "用户忽略规则: " + hitIgnore)
+                return@forEach
+            }
+            val v = PayNotifyParser.judge(seg, rules.filter { !it.merchant.startsWith("@ignore:") })
             if (v.verdict == "keep") pendingKeeps.add(v)
             else pendingDiscards.add(seg to (v.reason ?: "非支付"))
         }
@@ -258,8 +318,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun showConfirmSheet() {
         val e = pendingKeeps[confirmIdx]
-        curCat = e.category ?: "other"
-        val catLabel = CAT_LABELS[CAT_KEYS.indexOf(e.category ?: "other").coerceAtLeast(0)]
+        // e.category 已是中文 label(Cr.category.label), 直接展示; 不再走英文 CAT_KEYS 索引(该索引恒 -1 → 误显"餐饮")
+        val catLabel = e.category ?: "其他"
         AlertDialog.Builder(this)
             .setTitle("确认入账")
             .setMessage(
@@ -341,14 +401,25 @@ class MainActivity : AppCompatActivity() {
     private fun saveRule() {
         val m = etRuleMerchant.text.toString().trim()
         if (m.isEmpty()) {
-            Toast.makeText(this, "请输入商户名", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "请填写商户关键词", Toast.LENGTH_SHORT).show()
             return
         }
-        val catLabel = CAT_LABELS[spRuleCat.selectedItemPosition.coerceIn(0, CAT_LABELS.size - 1)]
-        val cat = Category.fromLabel(catLabel)
-        repo.upsertLearnedRule(LearnedRule(m, cat))
-        etRuleMerchant.setText("")
-        Toast.makeText(this, "已保存: " + m + " → " + catLabel, Toast.LENGTH_SHORT).show()
+        val typeIgnore = findViewById<Spinner>(R.id.spRuleType).selectedItemPosition == 1
+        if (Regex("验证码|\\d{4,}").containsMatchIn(m) && m.length <= 8) {
+            Toast.makeText(this, "关键词疑似验证码/编号，已忽略保存", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (typeIgnore) {
+            repo.upsertLearnedRule(LearnedRule("@ignore:" + m, Category.OTHER))
+            etRuleMerchant.setText("")
+            Toast.makeText(this, "已添加忽略规则: " + m, Toast.LENGTH_SHORT).show()
+        } else {
+            val catLabel = CAT_LABELS[spRuleCat.selectedItemPosition.coerceIn(0, CAT_LABELS.size - 1)]
+            val cat = Category.fromLabel(catLabel)
+            repo.upsertLearnedRule(LearnedRule(m, cat))
+            etRuleMerchant.setText("")
+            Toast.makeText(this, "已保存: " + m + " → " + catLabel, Toast.LENGTH_SHORT).show()
+        }
         reloadRulesPage()
     }
 
@@ -371,6 +442,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun reloadLlmStatus() {
         val cfg = LlmConfig.load(applicationContext)
+        // 打开时回显已存配置: 只填空字段, 不覆盖用户正在编辑的内容
+        val etEndpoint = findViewById<EditText>(R.id.etLlmEndpoint)
+        val etKey = findViewById<EditText>(R.id.etLlmKey)
+        val etModel = findViewById<EditText>(R.id.etLlmModel)
+        if (etEndpoint.text.isNullOrBlank() && cfg.endpoint.isNotEmpty()) etEndpoint.setText(cfg.endpoint)
+        if (etKey.text.isNullOrBlank() && cfg.apiKey.isNotEmpty()) etKey.setText(cfg.apiKey)
+        if (etModel.text.isNullOrBlank()) etModel.setText(cfg.model)
         tvLlmStatus.text = if (cfg.isEnabled) {
             "智能识别: 已启用(模型 " + cfg.model + ")"
         } else {
@@ -379,16 +457,32 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun saveLlmConfig() {
-        val endpoint = findViewById<EditText>(R.id.etLlmEndpoint).text.toString().trim()
-        val key = findViewById<EditText>(R.id.etLlmKey).text.toString().trim()
-        val model = findViewById<EditText>(R.id.etLlmModel).text.toString().trim().ifEmpty { LlmConfig.DEFAULT_MODEL }
+        val prev = LlmConfig.load(applicationContext)
+        // 空字段继承上次保存值, 防止误把配置抹掉; 要彻底关闭请用「清除 AI 设置」
+        val endpoint = findViewById<EditText>(R.id.etLlmEndpoint).text.toString().trim().ifEmpty { prev.endpoint }
+        val key = findViewById<EditText>(R.id.etLlmKey).text.toString().trim().ifEmpty { prev.apiKey }
+        val model = findViewById<EditText>(R.id.etLlmModel).text.toString().trim().ifEmpty { prev.model }
         val editor = getSharedPreferences(LlmConfig.PREFS, MODE_PRIVATE).edit()
-        editor.putBoolean("enabled", key.isNotEmpty())
+        editor.putBoolean("enabled", endpoint.isNotEmpty() && key.isNotEmpty())
         editor.putString("endpoint", endpoint)
         editor.putString("apiKey", key)
         editor.putString("model", model)
         editor.apply()
         Toast.makeText(this, "AI 设置已保存", Toast.LENGTH_SHORT).show()
+        reloadLlmStatus()
+    }
+
+    private fun clearLlmConfig() {
+        getSharedPreferences(LlmConfig.PREFS, MODE_PRIVATE).edit()
+            .putBoolean("enabled", false)
+            .putString("endpoint", "")
+            .putString("apiKey", "")
+            .putString("model", LlmConfig.DEFAULT_MODEL)
+            .apply()
+        findViewById<EditText>(R.id.etLlmEndpoint).setText("")
+        findViewById<EditText>(R.id.etLlmKey).setText("")
+        findViewById<EditText>(R.id.etLlmModel).setText(LlmConfig.DEFAULT_MODEL)
+        Toast.makeText(this, "已清除 AI 设置, 恢复本地规则判断", Toast.LENGTH_SHORT).show()
         reloadLlmStatus()
     }
 
@@ -434,12 +528,26 @@ class MainActivity : AppCompatActivity() {
 
     private fun reload() {
         val q = billSearch.text.toString().trim()
-        tvMonthTotal.text = fmt(repo.sumBetween(TimeUtil.firstOfMonth(), TimeUtil.todayDay()))
+        val _today = TimeUtil.todayDay()
+        tvMonthTotal.text = fmt(repo.sumBetween(TimeUtil.firstOfMonth(), _today))
+        tvWeekTotal.text = fmt(repo.sumBetween(TimeUtil.mondayOfToday(), _today))
+        tvMonthTotalStats.text = fmt(repo.sumBetween(TimeUtil.firstOfMonth(), _today))
+        tvCountTotal.text = repo.allEntries().size.toString()
+        renderWeeklyBars(repo.dailyTotals(TimeUtil.lastNDays(7)))
         val all = repo.allEntries()
-        val filtered = if (q.isEmpty()) all else all.filter {
-            (it.merchant ?: "").contains(q, true) || (it.raw ?: "").contains(q, true)
+        val catLabel = if (fCat.selectedItemPosition > 0) CAT_LABELS[fCat.selectedItemPosition - 1] else null
+        val timeCut = billTimeCutoff(fTime.selectedItemPosition)
+        val filtered = all.filter { e ->
+            val okSearch = q.isEmpty() || (e.merchant ?: "").contains(q, true) || (e.raw ?: "").contains(q, true)
+            val okCat = catLabel == null || (e.category ?: "其他") == catLabel
+            val okTime = timeCut == null || (e.day ?: "") >= timeCut
+            okSearch && okCat && okTime
         }
         adapter.entries = filtered
+        val spend = filtered.sumOf { it.amount }
+        val cnt = filtered.size
+        tvMonthTotal.text = fmt(spend)
+        tvBillCount.text = "共 $cnt 笔"
         tvLearned.text = buildLearnedText()
         tvAnalytics.text = buildStats()
     }
@@ -463,8 +571,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun buildLearnedText(): String {
         val rules = repo.learnedRules()
-        return if (rules.isEmpty()) "暂无学习规则"
-        else rules.joinToString("\n") { r -> r.merchant + " → " + r.category.label }
+        if (rules.isEmpty()) return "暂无规则"
+        val normal = rules.filter { !it.merchant.startsWith("@ignore:") }
+        val ignores = rules.filter { it.merchant.startsWith("@ignore:") }
+        val sb = StringBuilder()
+        if (normal.isNotEmpty()) {
+            sb.append("自动分类:\n")
+            sb.append(normal.joinToString("\n") { r -> "  " + r.merchant + " → " + r.category.label })
+        }
+        if (ignores.isNotEmpty()) {
+            sb.append("\n\n忽略通知(不入账):\n")
+            sb.append(ignores.joinToString("\n") { r -> "  " + r.merchant.removePrefix("@ignore:") })
+        }
+        return sb.toString()
     }
 
     /* ============ CSV 导出 ============ */
@@ -492,6 +611,60 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "已导出: " + f.absolutePath, Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
             Toast.makeText(this, "导出失败: " + e.message, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun renderWeeklyBars(daily: List<Pair<String, Double>>) {
+        weeklyBarsContainer.removeAllViews()
+        val ctx = this
+        val max = daily.maxOfOrNull { it.second } ?: 0.0
+        val barColor = 0xFF236B55.toInt()
+        val lightColor = 0xFFE5F0EA.toInt()
+        val textSec = 0xFF737D76.toInt()
+        daily.forEach { (day, sum) ->
+            val col = LinearLayout(ctx)
+            col.orientation = LinearLayout.VERTICAL
+            val lp = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
+            col.layoutParams = lp
+            col.gravity = android.view.Gravity.BOTTOM
+            val valTv = TextView(ctx)
+            valTv.text = if (sum > 0) "¥" + String.format(java.util.Locale.getDefault(), "%.1f", sum) else ""
+            valTv.textSize = 9f
+            valTv.setTextColor(textSec)
+            valTv.gravity = android.view.Gravity.CENTER
+            val bar = View(ctx)
+            val hPct = if (max > 0) ((sum / max).toInt().coerceIn(0, 100) * 80) else 8
+            val barLp = LinearLayout.LayoutParams(0, hPct)
+            barLp.weight = 0f
+            bar.layoutParams = barLp
+            val todayDay = TimeUtil.todayDay()
+            bar.setBackgroundColor(if (day == todayDay) barColor else lightColor)
+            bar.setPadding(6, 0, 6, 0)
+            val label = TextView(ctx)
+            label.text = if (day == todayDay) "今天" else day.takeLast(5)
+            label.textSize = 9f
+            label.setTextColor(textSec)
+            label.gravity = android.view.Gravity.CENTER
+            label.setPadding(0, 4, 0, 0)
+            col.addView(valTv, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+            col.addView(bar, barLp)
+            col.addView(label, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+            weeklyBarsContainer.addView(col, lp)
+        }
+    }
+
+    /** 时间筛选下拉 → 起始日期字符串(null=全部) */
+    private fun billTimeCutoff(pos: Int): String? {
+        val t = TimeUtil.todayDay()
+        val d = java.time.LocalDate.parse(t)
+        return when (pos) {
+            0 -> t // 今天
+            1 -> d.minusDays(6).toString() // 近7天(含今天)
+            2 -> d.minusDays(29).toString() // 近30天
+            3 -> d.minusDays(59).toString() // 近60天
+            4 -> d.minusMonths(6).toString() // 近半年
+            5 -> d.minusYears(1).toString() // 近1年
+            else -> null // 全部
         }
     }
 

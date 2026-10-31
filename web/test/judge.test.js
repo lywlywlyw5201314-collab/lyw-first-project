@@ -1,6 +1,6 @@
 /**
  * judge 判断层测试 (对齐 Android JudgeChain: 保留/丢弃/弃权 三态)
- * 运行: node D:/apk/web/test/judge.test.js  (退出码 0 = 全绿)
+ * 运行: node D:/apk2/web/test/judge.test.js  (退出码 0 = 全绿)
  */
 (function () {
   'use strict';

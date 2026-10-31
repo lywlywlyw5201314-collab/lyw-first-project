@@ -36,6 +36,12 @@ D:\apk2
 - **iOS 风格重构版**：底部四导航（记账/账单/规则/分析）；齿轮进「设置与诊断」弹层；确认入账/账单编辑/规则编辑三个底部弹层；主色 #2f7cf6；430px 居中容器；safe-area 支持
 - **数据**：localStorage 键 `notifyledger.v1`（entries + rules + consent），新旧数据兼容
 
+### 已完成（App 端 · 第一版修正，详见 docs/dev-logs/2026-11-01.md）
+- **账单页「共 N 笔」笔数元素**：activity_main.xml tvBillCount（默认「共 0 笔」）+ MainActivity L550 `共 $cnt 笔`（按筛选后计数）；tvRangeCount 与其共用同一 view（有意别名，非 bug）；模拟器实测「共 2 笔」
+- **账单行分类显示修正**：原英文 key 索引恒 -1 误显「餐饮」，改为直接展示 DB 中文分类（盒马→购物、支付宝→其他）
+- **parser 双端 1:1 对齐**：parser.js 两处修正 + Kotlin 同步 + regex-align.js KT_PATH 修正，19 个 pattern 全绿；JUnit PayNotifyParserTest 24/24
+- **编译/安装链路打通**：gradle :app:assembleDebug SUCCESS、:app:testDebugUnitTest 通过、`adb install -r` 更新装（不重清数据）
+
 ### 待验证
 - iOS 重构版 3 文件（index.html / style.css / app.js）是否已落盘到本目录，5 场景实测：①粘贴通知入账 ②截图识别 ③改分类存规则 ④删账单 ⑤统计同步
 
@@ -44,9 +50,9 @@ D:\apk2
 2. 截图 OCR 离线化（Tesseract.js 本地化，摆脱 CDN）
 3. 确认账单页的搜索/筛选/CSV 导出/日期分组真实可用（重构版已写，需实测）
 
-### 待做（App 端，最终目标，在 D:\apk\app）
-4. 网页定稿逻辑与 Kotlin `PayNotifyParser.kt` 逐行对齐（纪律：改 parser.js → 同步 Kotlin → 跑 `node D:\apk\web\test\regex-align.js` → 跑 JUnit）
-5. 补齐 Android Studio 接手清单（在 `D:\apk\README.md` 第 4 节）：编译验证、截图 OCR 扩展点（ML Kit / 视觉模型）、数据库增量迁移（onUpgrade 改增量 ALTER）、AI 设置界面（LlmConfig 4 key）
+### 待做（App 端，最终目标，在 D:\apk2\app）
+4. ~~网页定稿逻辑与 Kotlin `PayNotifyParser.kt` 逐行对齐~~（**已完成 2026-11-01**：regex-align 19 pattern 全绿 + JUnit 24/24，见 docs/dev-logs/2026-11-01.md；纪律保留：改 parser.js → 同步 Kotlin → 跑 `node D:\apk2\web\test\regex-align.js` → 跑 JUnit）
+5. 补齐 Android Studio 接手清单（在 `D:\apk2\README.md` 第 4 节）：编译验证、截图 OCR 扩展点（ML Kit / 视觉模型）、数据库增量迁移（onUpgrade 改增量 ALTER）、AI 设置界面（LlmConfig 4 key）
 6. AI 判断层：Kotlin `LlmJudge`（OpenAI 兼容端点）已写好，默认关闭；网页端 `judge(text, rules, aiJudge)` 已预留 aiJudge 参数。接 AI 只需配 endpoint/key/model
 
 ## 五、铁律（任何时候不能破）
@@ -59,14 +65,14 @@ D:\apk2
 
 ## 六、运行方式
 
-- 网页：`node D:\apk\.srv.js`（静态服务 8090），开 `http://localhost:8090/`；或工具可用时直接双击 `web\index.html`
+- 网页：`node D:\apk2\_srv8091.js`（静态服务 8091），开 `http://localhost:8091/`；或工具可用时直接双击 `web\index.html`
 - 测试：`node D:\apk2\web\test\parser.test.js`、`node D:\apk2\web\test\judge.test.js`
-- App：Android Studio（AGP 8.5 / Kotlin 1.9.22 / JDK 17）打开 `D:\apk\app`；本机无 Java/SDK，未编译过（诚实标注）
+- App：Android Studio（AGP 8.5 / Kotlin 1.9.22 / JDK 17）打开 `D:\apk2\app`；命令行：`JAVA_HOME=D:\softprogram\jdk17\jdk-17.0.20.1+1` + `D:\gradle-8.7\bin\gradle.bat :app:assembleDebug --no-daemon`（已验证 BUILD SUCCESSFUL，见 docs/dev-logs/2026-11-01.md）
 
 ## 七、新会话接手清单（按顺序）
 
 1. 读本文件 + `D:\apk2\web` 全部文件
 2. 确认 iOS 重构版已落盘；没有则用最近一次会话里给过的 3 段代码落盘
 3. 跑两套测试 + 5 场景浏览器实测
-4. 全绿后进入 App 端对齐（待做第 4 项）
+4. App 端 parser 对齐已完成（2026-11-01，见 docs/dev-logs/2026-11-01.md）；剩余待做：Android Studio 接手清单（第 5 项）+ AI 判断层接入（第 6 项）
 5. 每完成一项，更新本文件「进度」部分再收工

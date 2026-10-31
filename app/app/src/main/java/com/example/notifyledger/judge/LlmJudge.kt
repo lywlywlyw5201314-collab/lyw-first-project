@@ -72,6 +72,28 @@ class LlmJudge(private val config: () -> LlmConfig = { LlmConfig() }) : Judge {
     }
 
     private fun callLlm(cfg: LlmConfig, text: String): String {
+        // 单次重试 + 短退避: 网络抖动/读超时只重连一次; 仍失败则抛 IOException,
+        // 由 judge() 捕获转 Verdict.Abstain, 交规则层兜底。(429/503 限流退避暂不做)
+        var lastError: IOException? = null
+        for (attempt in 1..MAX_ATTEMPTS) {
+            try {
+                return requestLlm(cfg, text)
+            } catch (e: IOException) {
+                lastError = e
+                if (attempt < MAX_ATTEMPTS) {
+                    try {
+                        Thread.sleep(RETRY_BACKOFF_MS)
+                    } catch (ie: InterruptedException) {
+                        Thread.currentThread().interrupt()
+                        throw e
+                    }
+                }
+            }
+        }
+        throw lastError ?: IOException("LLM 请求失败")
+    }
+
+    private fun requestLlm(cfg: LlmConfig, text: String): String {
         val body = JSONObject()
             .put("model", cfg.model)
             .put("messages", JSONArray().apply {
@@ -107,6 +129,9 @@ class LlmJudge(private val config: () -> LlmConfig = { LlmConfig() }) : Judge {
     }
 
     private companion object {
+        const val MAX_ATTEMPTS = 2 // 首次 + 重试一次
+        const val RETRY_BACKOFF_MS = 1500L
+
         val DISCARD_DEFAULT_REASON = "AI 判定不是支出支付"
 
         val SYSTEM_PROMPT = """
@@ -121,7 +146,7 @@ class LlmJudge(private val config: () -> LlmConfig = { LlmConfig() }) : Judge {
 /**
  * AI 判断器配置, 存放于 SharedPreferences([LlmConfig.PREFS])。
  * 默认全部关闭 —— 未配置时 [LlmJudge] 直接弃权, 判断链由 [RuleJudge] 兜底, App 开箱即用。
- * (设置页 UI 为后续扩展点; 现在改配置可直接编辑该 SharedPreferences。)
+ * 配置入口: 主界面「AI 设置」区块(打开时回显已存值, [MainActivity.saveLlmConfig] 写入)。
  */
 data class LlmConfig(
     val enabled: Boolean = false,

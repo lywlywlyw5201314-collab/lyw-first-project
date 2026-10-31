@@ -1,6 +1,6 @@
 /**
  * parser.js 单元测试（Node 端）
- * 运行: node D:\apk\web\test\parser.test.js
+ * 运行: node D:\apk2\web\test\parser.test.js
  * 通过 → 退出码 0；失败 → 打印失败项并以退出码 1 结束
  */
 'use strict';

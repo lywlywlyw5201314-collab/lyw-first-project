@@ -134,6 +134,8 @@
     t = t.replace(/向|给|商户|本笔|备注|您|已/g, '');
     // 7) 清理标点
     t = t.replace(/[，。|、:：,\s]/g, ' ').trim();
+    // 8) 折叠连续空白(与 Kotlin 侧 extractMerchant 末步 1:1 对齐)
+    t = t.replace(/\s{2,}/g, ' ').trim();
     return t || null;
   }
 
@@ -299,7 +301,7 @@
     // 过滤: 只有包含 金额+ 商户/来源/状态词 的才作为独立交易段, 其余丢弃
     return parts.filter(function (seg) {
       var s = seg.trim();
-      return s && (s.match(amtRe) || /¥/);
+      return s && (s.match(amtRe) || s.indexOf('¥') !== -1);
     });
   }
 

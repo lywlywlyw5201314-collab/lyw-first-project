@@ -1,4 +1,4 @@
-﻿package com.example.notifyledger.parser
+package com.example.notifyledger.parser
 
 import com.example.notifyledger.model.Category
 import com.example.notifyledger.model.ClassifyResult
@@ -9,7 +9,7 @@ import kotlin.math.round
 /**
  * PayNotifyParser — 支付通知解析 / 自动分类 / 规则学习
  *
- * Kotlin 镜像, 与 web 端 D:\apk\web\parser.js 保持逐行一致(同一套正则与语义):
+ * Kotlin 镜像, 与 web 端 web\parser.js 保持逐行一致(同一套正则与语义):
  *  - [detectSource]    识别来源: 微信 / 支付宝 / 银联
  *  - [isPayment]       判断是否为"支出"类支付通知(收入/退款/非支付 → false)
  *  - [extractAmount]   金额提取(带"优惠/立减/减免/抵扣"前缀的金额不作为实付)
@@ -55,7 +55,7 @@ object PayNotifyParser {
     )
 
     private val PAYMENT_MARKERS =
-        Regex("支付成功|交易成功|消费成功|扣款成功|订单完成|刷卡成功|支付|付款|扣款")
+        Regex("支付|付款|扣款|消费|缴费|买单|代付|充值|话费|油费|水费|电费|网费|交易|结算|刷卡|订单完成")
 
     private val INCOME_PATTERNS = Regex("收到|退回|退款|入账|到账")
 
@@ -137,10 +137,7 @@ object PayNotifyParser {
         t = t.replace(Regex("收到(一个|好友)? ?转账|收款"), "")
         t = t.replace(Regex("\\d{4}[-/]\\d{1,2}[-/]\\d{1,2}"), "")
         t = t.replace(Regex("\\d{1,2}:\\d{2}(?::\\d{2})?"), "")
-        t = t.replace(Regex("向|给|商户|本笔|备注|您"), "")
-        t = t.replace(Regex("交易号|订单号|流水号|单号"), "")
-        t = t.replace(Regex("\\d{6,}"), " ")
-        t = t.replace(Regex("成功|失败|已支付|已退款"), "")
+        t = t.replace(Regex("向|给|商户|本笔|备注|您|已"), "")
         t = t.replace(Regex("[，。|、:：,\\s]"), " ").trim()
         t = Regex("\\s{2,}").replace(t, " ").trim()
         return t.ifEmpty { null }

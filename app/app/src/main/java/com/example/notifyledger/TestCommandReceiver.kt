@@ -57,6 +57,10 @@ class TestCommandReceiver : BroadcastReceiver() {
                             val uri = Uri.fromFile(f)
                             val results = OcrHelper.recognizeAndJudge(context, uri, rules)
                             var n = 0
+                            if (results == null) {
+                                // OCR 引擎不可用(缺 GMS), 记录提示
+                                context.getSharedPreferences("test_prefs", android.content.Context.MODE_PRIVATE).edit().putString("ocr_result","OCR 引擎不可用(模拟器缺 GMS)").apply()
+                            } else {
                             results.forEach { v ->
                                 val entry = LedgerEntry(
                                     day = TimeUtil.todayDay(),
@@ -72,6 +76,7 @@ class TestCommandReceiver : BroadcastReceiver() {
                             val note = if (n == 0) "测试OCR: 截图未识别到可入账支付信息(OCR引擎不可用或非支付截图)" else "测试OCR 入账 " + n + " 笔"
                             writeNote(context, "ocr_result", note)
                             Log.i(TAG, "TEST_OCR 完成: " + note)
+                            }
                         } catch (err: Exception) {
                             writeNote(context, "ocr_result", "测试OCR 异常: " + err.message)
                             Log.e(TAG, "TEST_OCR 异常", err)

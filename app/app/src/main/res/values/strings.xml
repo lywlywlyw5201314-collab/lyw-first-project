@@ -51,6 +51,7 @@
     <string name="hint_llm_key">API 密钥</string>
     <string name="hint_llm_model">模型</string>
     <string name="btn_llm_save">保存设置</string>
+    <string name="btn_llm_clear">清除 AI 设置</string>
     <string name="self_test_title">系统自检</string>
     <string name="btn_run_self_test">运行自检</string>
 </resources>

@@ -11,6 +11,11 @@ import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
 import com.example.notifyledger.parser.PayNotifyParser
 
 object OcrHelper {
+    /** 本地 OCR 引擎不可用(缺 GMS)的哨兵文本, 上层据此提示需真机/GMS 环境 */
+    private const val ERROR_UNAVAILABLE = "__ocr_unavailable__"
+
+    /** 本地 OCR 引擎不可用(缺 GMS)的哨兵文本, 上层据此提示需真机/GMS 环境 */
+
 
     /** 识别一张截图, 返回 保留入账的 判断结果 列表(不含放弃项)。
      *  失败/异常(例如模拟器缺 ML Kit 运行时依赖)返回空列表, 不抛出, 由上层按"未识别到支付信息"处理并在界面提示。 */
@@ -18,10 +23,14 @@ object OcrHelper {
         context: Context,
         imageUri: Uri,
         learnedRules: List<com.example.notifyledger.model.LearnedRule>
-    ): List<PayNotifyParser.JudgeResult> {
+    ): List<PayNotifyParser.JudgeResult>? {
         val raw = recognize(context, imageUri)
+        if (raw == ERROR_UNAVAILABLE) {
+            Log.w("OcrHelper", "OCR 引擎不可用(模拟器缺 GMS), 需真机或带 Google Play 的镜像")
+            return null
+        }
         if (raw.isBlank()) {
-            Log.w("OcrHelper", "recognize() 返回空文本, 不入账 (可能是非支付截图或 OCR 引擎不可用)")
+            Log.w("OcrHelper", "recognize() 返回空文本, 不入账 (非支付截图)")
             return emptyList()
         }
         val cleaned = PayNotifyParser.cleanOcrText(raw)
@@ -52,7 +61,7 @@ object OcrHelper {
             Log.i("OcrHelper", "OCR 完成, 识别到 " + text.length + " 字符")
             text
         } catch (e: Throwable) {
-            Log.e("OcrHelper", "OCR 引擎不可用(缺依赖/服务), 本次跳过识别: " + e.message, e)
-            ""
+            Log.e("OcrHelper", "OCR 引擎不可用(缺 GMS/ML Kit), 本次跳过: " + e.message, e)
+            ERROR_UNAVAILABLE
         }
 }

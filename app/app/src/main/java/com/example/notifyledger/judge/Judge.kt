@@ -43,7 +43,13 @@ interface Judge {
  */
 class JudgeChain(private val judges: List<Judge>) {
 
-    fun judge(text: String, source: String?): Verdict {
+    /** 忽略规则(用户设置的'忽略通知')命中则直接 Discard, 优先于 LLM/规则判断 */
+    fun judge(text: String, source: String?, ignoreRules: List<String> = emptyList()): Verdict {
+        for (ig in ignoreRules) {
+            if (ig.isNotEmpty() && text.contains(ig, ignoreCase = true)) {
+                return Verdict.Discard("用户忽略规则: " + ig, text, "ignore-rule")
+            }
+        }
         for (j in judges) {
             when (val v = j.judge(text, source)) {
                 is Verdict.Keep -> return v

@@ -39,10 +39,18 @@ class LedgerDb(context: Context) :
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // 骨架阶段: 直接重建(Codex 接手后如需保留数据, 改为增量迁移)
-        db.execSQL("DROP TABLE IF EXISTS learned_rules")
-        db.execSQL("DROP TABLE IF EXISTS entries")
-        onCreate(db)
+        // 数据保留式增量迁移: 每个版本只补它需要的改动, 绝不 DROP/重建表(旧账本数据必须原样保留)。
+        // 用法: 以后升级 DB_VERSION 时, 在下方追加 "if (oldVersion < N)" 分支即可, 旧分支不动。
+        if (oldVersion < 2) {
+            // v1 → v2: entries 的列已与 LedgerEntry 一一对应, 无需 ALTER;
+            // 仅对缺少 day 索引的旧库补齐(新建库 onCreate 已建), 不触碰任何数据。
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_entries_day ON entries(day)")
+        }
+        // 未来加列示例(启用时把 DB_VERSION +1, 并取消注释):
+        // if (oldVersion < 3) {
+        //     db.execSQL("ALTER TABLE entries ADD COLUMN note TEXT")
+        //     db.execSQL("UPDATE entries SET note = '' WHERE note IS NULL")
+        // }
     }
 
     companion object {

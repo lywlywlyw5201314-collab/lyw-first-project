@@ -1,5 +1,7 @@
 package com.example.notifyledger
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
@@ -40,6 +42,12 @@ class NotificationLedgerService : NotificationListenerService() {
 
     /** 去重窗口: 同 key 5 分钟内不重复入账 */
     private val recentKeys = LinkedHashMap<String, Long>()
+    private val dedupLock = Any()
+
+    /** 去重键持久化: 服务进程被杀重启后窗口仍有效, 防止同一笔支付被重复入账 */
+    private val dedupPrefs: SharedPreferences by lazy {
+        getSharedPreferences(DEDUP_PREFS, Context.MODE_PRIVATE)
+    }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         Log.d(TAG, "onNotificationPosted pkg=" + sbn.packageName)
@@ -65,7 +73,8 @@ class NotificationLedgerService : NotificationListenerService() {
 
         executor.execute {
             val source = PayNotifyParser.detectSource(text)
-            when (val v = chain.judge(text, source)) {
+            val ignoreRules = repo.learnedRules().filter { it.merchant.startsWith("@ignore:") }.map { it.merchant.removePrefix("@ignore:") }
+            when (val v = chain.judge(text, source, ignoreRules)) {
                 is Verdict.Keep -> {
                     repo.insertEntry(v.entry)
                     Log.i(TAG, "入账 [${v.via}] ${v.entry.amount} ${v.entry.merchant ?: "-"} → ${v.entry.category}")
@@ -80,21 +89,55 @@ class NotificationLedgerService : NotificationListenerService() {
 
     override fun onListenerConnected() {
         Log.i(TAG, "通知监听已连接, 方向 B 自动记账生效")
+        restoreDedupKeys()
     }
 
     private fun isDuplicate(key: String): Boolean {
-        synchronized(recentKeys) {
+        synchronized(dedupLock) {
             val now = System.currentTimeMillis()
             val stale = recentKeys.filterValues { it < now - DEDUP_WINDOW_MS }
             stale.keys.forEach { recentKeys.remove(it) }
             if (recentKeys.containsKey(key)) return true
             recentKeys[key] = now
+            capDedupKeys()
+            persistDedupKeys()
             return false
         }
+    }
+
+    /** 启动时从 SharedPreferences 恢复仍在 5 分钟窗口内的去重键 */
+    private fun restoreDedupKeys() {
+        synchronized(dedupLock) {
+            val now = System.currentTimeMillis()
+            val all = dedupPrefs.all
+            for ((k, v) in all) {
+                val t = (v as? Long) ?: continue
+                if (t >= now - DEDUP_WINDOW_MS) recentKeys[k] = t
+            }
+            capDedupKeys()
+            persistDedupKeys()
+        }
+    }
+
+    /** 把当前窗口内的去重键写回 SharedPreferences(调用方须持有 dedupLock) */
+    private fun persistDedupKeys() {
+        dedupPrefs.edit()
+            .clear()
+            .also { e -> recentKeys.forEach { (k, v) -> e.putLong(k, v) } }
+            .apply()
+    }
+
+    /** 超出上限时按时间戳从旧到新丢弃, 保持持久化条数有界(调用方须持有 dedupLock) */
+    private fun capDedupKeys() {
+        if (recentKeys.size <= MAX_DEDUP_KEYS) return
+        val drop = recentKeys.toList().sortedBy { it.second }.take(recentKeys.size - MAX_DEDUP_KEYS)
+        drop.forEach { recentKeys.remove(it.first) }
     }
 
     companion object {
         private const val TAG = "NotifyLedger"
         private const val DEDUP_WINDOW_MS = 5L * 60 * 1000 // 5 分钟
+        private const val DEDUP_PREFS = "notifyledger_dedup"
+        private const val MAX_DEDUP_KEYS = 100 // 持久化上限, 超出按时间戳丢弃最旧
     }
 }

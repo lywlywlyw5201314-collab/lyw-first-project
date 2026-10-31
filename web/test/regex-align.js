@@ -8,7 +8,7 @@
  *     反转义 (\\ → \, \" → "), 记录 (pattern, 是否带 RegexOption.IGNORE_CASE)
  *  3) 归一化两侧 pattern(转义/空白), 做集合比较
  *
- * 运行: node D:\apk\web\test\regex-align.js
+ * 运行: node D:\apk2\web\test\regex-align.js
  * 全部一致 → 退出码 0; 有差异 → 打印差异并以退出码 1 结束
  */
 'use strict';
@@ -16,7 +16,7 @@ var fs = require('fs');
 var path = require('path');
 
 var JS_PATH = path.join(__dirname, '..', 'parser.js');
-var KT_PATH = 'D:\\apk\\app\\app\\src\\main\\java\\com\\example\\notifyledger\\parser\\PayNotifyParser.kt';
+var KT_PATH = 'D:\\apk2\\app\\app\\src\\main\\java\\com\\example\\notifyledger\\parser\\PayNotifyParser.kt';
 
 /* ---------- JS 侧: 提取正则字面量 ---------- */
 function extractJsRegexes(src) {
@@ -143,7 +143,8 @@ var missingInJs = ktKeys.filter(function (k) { return !jsMap[k]; });
 /* 已知结构等价白名单: JS 正则字面量 ↔ Kotlin 字符串级等价的写法
  *  (JS String.replace(/,/g,'') 等价于 Kotlin String.replace(",",""), 后者非正则) */
 var KNOWN_EQUIV = [
-  { jsPattern: ',', ktMarker: 'replace(",", "")', note: 'JS /,/g ↔ Kotlin String.replace(",", "")(全部替换, 等价)' }
+  { jsPattern: ',', ktMarker: 'replace(",", "")', note: 'JS /,/g ↔ Kotlin String.replace(",", "")(全部替换, 等价)' },
+  { jsPattern: '\\r?\\n', ktMarker: "split('\\n', '\\r')", note: 'JS split(/\\r?\\n/) ↔ Kotlin split(\'\\n\', \'\\r\')(分行语义等价, 两侧随后都过滤空行)' }
 ];
 function knownEquiv(k) {
   return KNOWN_EQUIV.find(function (e) {
