@@ -322,17 +322,10 @@
   }
 
   /**
-   * 判断链入口。默认本地规则判断; 传入 aiJudge 时先问 AI,
-   * AI 弃权/异常才落回规则层(与 Android LlmJudge 弃权 → RuleJudge 兜底一致)。
-   * discard 为定论, 任一判断器给出即停止。
+   * 判断链入口: 本地规则判断 —— 解析成功且关键字门通过才 keep, 否则 discard。
+   * 不外呼任何 AI/网络。与 Android PayNotifyParser.judge 对齐。
    */
-  function judge(text, learnedRules, aiJudge) {
-    var v;
-    if (typeof aiJudge === 'function') {
-      try { v = aiJudge(text, learnedRules); } catch (e) { v = null; }
-      if (v && v.verdict === 'discard') return v;
-      if (v && v.verdict === 'keep') return v;
-    }
+  function judge(text, learnedRules) {
     return ruleJudge(text, learnedRules);
   }
 

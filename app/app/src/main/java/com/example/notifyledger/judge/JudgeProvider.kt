@@ -15,7 +15,7 @@ object JudgeProvider {
 
     /** 完整判断链: 忽略规则 → 本地规则学习。 */
     fun chain(context: Context): JudgeChain {
-        val repo = LedgerRepository.get(context)
+        val repo = LedgerRepository(context)
         val judges: MutableList<Judge> = mutableListOf(
             RuleJudge { repo.learnedRules() }
         )

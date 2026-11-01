@@ -484,7 +484,7 @@ class MainActivity : AppCompatActivity() {
         llPaidItems.removeAllViews()
         // 只列出弹窗读到的支付条目(手动录入的 source 为 null, 不上列表)
         // 同一「商户(或原文签名)+金额」合并为一行
-        val groups = LinkedHashMap<Pair<String, Double>, List<LedgerEntry>>()
+        val groups = LinkedHashMap<Pair<String, Double>, MutableList<LedgerEntry>>()
         for (e in all) {
             if (e.source == null) continue
             val sig = sigOf(e)
@@ -557,8 +557,7 @@ class MainActivity : AppCompatActivity() {
             .setTitle("丢弃「" + (if (sig.length > 24) sig.take(24) + "…" else sig) + "」?")
             .setMessage("两件事会同时发生:\n" +
                 "1. 学一条忽略规则: 以后弹窗里再出现这条信息, 直接丢弃, 不再记录;\n" +
-                "2. 删除现有的 " + items.size + " 条对应记录。\n\n" +
-                "如需恢复: 在下方「我的规则」里删掉这条忽略规则。")
+                "2. 删除现有的 " + items.size + " 条对应记录。")
             .setPositiveButton("丢弃") { _, _ ->
                 repo.upsertLearnedRule(LearnedRule("@ignore:" + sig, Category.OTHER))
                 items.forEach { repo.deleteEntry(it.id) }

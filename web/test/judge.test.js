@@ -32,17 +32,8 @@
   var kl = P.judge('支付宝 向美团外卖支付 15.00元', [{ merchant: '美团外卖', category: 'shopping' }]);
   check('学习规则命中(外卖→购物)', kl.verdict === 'keep' && kl.entry.category === 'shopping' && kl.entry.via === 'learned', JSON.stringify(kl.entry));
 
-  console.log('[judge] AI 弃权 → 规则兜底');
-  var withAbstain = P.judge('微信支付 支付成功 ¥23.50 XX便利店 12:47', [], function () { return { verdict: 'abstain', reason: 'AI 未配置' }; });
-  check('AI 弃权时回落到规则(仍保留)', withAbstain.verdict === 'keep' && withAbstain.entry.amount === 23.5, JSON.stringify(withAbstain));
-
-  console.log('[judge] AI 定论丢弃 → 不再兜底');
-  var withAiDiscard = P.judge('随便一段含 支付 的字 23.00元', [], function () { return { verdict: 'discard', reason: 'AI: 不是真实支出' }; });
-  check('AI 定论丢弃直接生效', withAiDiscard.verdict === 'discard' && withAiDiscard.reason === 'AI: 不是真实支出', JSON.stringify(withAiDiscard));
-
-  console.log('[judge] 异常 AI → 不崩溃, 回落规则');
-  var withThrow = P.judge('微信支付 支付成功 ¥23.50 XX便利店', [], function () { throw new Error('boom'); });
-  check('AI 抛异常仍保留(规则兜底)', withThrow.verdict === 'keep', JSON.stringify(withThrow));
+   console.log('[judge] 无 AI 参数(与 Android 对齐: 纯本地)');
+   check('P.judge 签名 arity = 2', P.judge.length === 2, 'arity=' + P.judge.length);
 
   console.log('[judge] OCR 文本清洗');
   check('多行 OCR 清洗成一行', P.cleanOcrText('微信支付\n支付成功\n¥23.50\nXX便利店 12:47') === '微信支付 支付成功 ¥23.50 XX便利店 12:47');

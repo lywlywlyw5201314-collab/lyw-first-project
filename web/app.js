@@ -98,6 +98,7 @@ function renderCatPick(containerId,current){
       c.classList.add('active');
       if(containerId==='catPick')curCat.val=k;
       else if(containerId==='ruleCatPick')ruleCat.val=k;
+      else if(containerId==='piCatPick')piCat.val=k;
     });
     box.appendChild(c);
   });
@@ -271,6 +272,7 @@ function exportCsv(){
 
 /* 规则 */
 function renderRules(){
+  renderPaidItems();
   var total=state.rules.length,enabled=state.rules.filter(function(r){return r.enabled!==false;}).length;
   if($('ruleStat'))$('ruleStat').innerHTML='<div class="rs"><b>'+total+'</b><span>总规则</span></div><div class="rs on"><b>'+enabled+'</b><span>已启用</span></div><div class="rs warn"><b>'+(total-enabled)+'</b><span>已停用</span></div>';
   var ul=$('ruleList');ul.innerHTML='';
@@ -356,6 +358,79 @@ function judgeWithIgnore(seg){
   var hitIgnore=state.rules.find(function(r){return r.ignore&&r.enabled!==false&&mLow.indexOf((r.merchant||'').toLowerCase())>=0;});
   if(hitIgnore)return{verdict:'discard',reason:'忽略规则：'+hitIgnore.merchant,raw:seg};
   return P.judge(seg,state.rules);
+}
+
+/* 已识别支付信息(规则页): 弹窗读到的每条支付, 同商户同金额并一行, 与 Android 规则页对齐 */
+var piCat={val:'other'},curPiGroup=null;
+function paidGroupOf(e){return (e.merchant&&e.merchant!=='未知商户')?e.merchant:String(e.raw||'').trim();}
+function paidItems(){
+  var map={},order=[];
+  state.entries.forEach(function(e){
+    if(!e.raw||e.raw==='手动录入')return;
+    var sig=paidGroupOf(e);if(!sig)return;
+    var key=sig+'|'+e.amount;
+    if(!map[key]){map[key]={sig:sig,amount:e.amount,items:[]};order.push(key);}
+    map[key].items.push(e);
+  });
+  return order.map(function(k){return map[k];});
+}
+function renderPaidItems(){
+  var ul=$('paidItemsList');if(!ul)return;ul.innerHTML='';
+  var groups=paidItems();
+  if(!groups.length){ul.innerHTML='<div class="empty"><div class="em-ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M9 9h6M9 13h4"/></svg></div>暂无<br>(在弹窗里确认支付后, 这里会逐条列出)</div>';return;}
+  var head=document.createElement('div');head.className='rule-hint';head.style.padding='0 0 8px';
+  head.textContent='共 '+groups.length+' 条 · 点一条可改类型 / 丢弃(以后不再入这笔) / 删除记录';
+  ul.appendChild(head);
+  groups.forEach(function(g){
+    var li=document.createElement('div');li.className='rule-item';
+    var ic=document.createElement('span');ic.className='ri-ic';
+    ic.style.background=CAT_COLOR[g.items[0].category]||'#aeaeb2';
+    ic.textContent=g.sig.slice(0,1);
+    var m=document.createElement('div');m.className='ri-main';
+    m.innerHTML='<b></b><span></span>';
+    m.children[0].textContent=g.sig;
+    m.children[1].textContent='¥'+fmt(g.amount)+' · '+(CATS[g.items[0].category]||'其他')+' · 点一下处理';
+    var c=document.createElement('span');c.className='ri-count';c.textContent='×'+g.items.length;
+    li.appendChild(ic);li.appendChild(m);li.appendChild(c);
+    li.addEventListener('click',function(){openPaidItem(g);});
+    ul.appendChild(li);
+  });
+}
+function openPaidItem(g){
+  curPiGroup=g;
+  piCat.val=g.items[0].category||'other';
+  if($('piTitle'))$('piTitle').textContent='处理: '+g.sig+' '+fmt(g.amount);
+  if($('piHint')){$('piHint').textContent='共 '+g.items.length+' 条记录 · 丢弃会同时删掉这些记录, 且同样的信息以后不再自动入账';$('piHint').className='rule-hint';}
+  renderCatPick('piCatPick',piCat.val);
+  showSheet('piSheet');
+}
+function piSave(){
+  var g=curPiGroup;if(!g)return;
+  g.items.forEach(function(e){e.category=piCat.val;});
+  var kw=(g.items[0].merchant&&g.items[0].merchant!=='未知商户')?g.items[0].merchant:'';
+  if(kw){state.rules=P.learn(kw,piCat.val,state.rules);}
+  save();hideSheet('piSheet');renderRules();renderBill();
+  toast(kw?('已改类型为「'+(CATS[piCat.val]||'')+'」, 以后自动记住'):'已改类型','ok');
+}
+function piDiscard(){
+  var g=curPiGroup;if(!g)return;
+  var kw=paidGroupOf(g.items[0]);
+  if(!confirm('将同时发生两件事:\n1. 「'+kw+' '+fmt(g.amount)+'」以后不再自动入账\n2. 已记录的 '+g.items.length+' 条账单一并删除\n\n如需恢复, 可回到「我的规则」删掉该忽略规则'))return;
+  state.rules=P.learn(kw,'other',state.rules);
+  var r=state.rules.find(function(x){return x.merchant.toLowerCase()===kw.toLowerCase();});
+  if(r){r.ignore=true;r.enabled=true;}
+  var ids={};g.items.forEach(function(e){ids[e.id]=true;});
+  state.entries=state.entries.filter(function(e){return !ids[e.id];});
+  save();hideSheet('piSheet');renderRules();renderBill();
+  toast('已丢弃「'+kw+'」, 同样信息不再自动入账','ok');
+}
+function piDelete(){
+  var g=curPiGroup;if(!g)return;
+  if(!confirm('删除「'+g.sig+'」的 '+g.items.length+' 条账单记录?\n(不影响规则, 下次读到同样信息仍会入账)'))return;
+  var ids={};g.items.forEach(function(e){ids[e.id]=true;});
+  state.entries=state.entries.filter(function(e){return !ids[e.id];});
+  save();hideSheet('piSheet');renderRules();renderBill();
+  toast('已删除 '+g.items.length+' 条记录','ok');
 }
 
 /* 分析 */
@@ -547,9 +622,11 @@ function init(){renderCatQuick();
   if($('btnRulesPlus'))$('btnRulesPlus').addEventListener('click',newRule);
   if($('ruleMerchant')){var _rm=$('ruleMerchant');_rm.addEventListener('input',function(){});}
   $('btnRuleSave').addEventListener('click',saveRule);
+  if($('btnPiSave'))$('btnPiSave').addEventListener('click',piSave);
+  if($('btnPiDiscard'))$('btnPiDiscard').addEventListener('click',piDiscard);
+  if($('btnPiDelete'))$('btnPiDelete').addEventListener('click',piDelete);
   document.querySelectorAll('#statRange .seg-btn').forEach(function(b){b.addEventListener('click',function(){document.querySelectorAll('#statRange .seg-btn').forEach(function(x){x.classList.remove('active');});b.classList.add('active');statRangeDays=b.dataset.range==='all'?0:parseInt(b.dataset.range,10);renderStats();});});
   if($('siListener'))$('siListener').addEventListener('click',function(){$('listenerSub').textContent='已开启 · 支付通知自动入账';});
-  if($('siAi'))$('siAi').addEventListener('click',function(){$('aiSub').textContent='未配置 · 本地规则自动判断';});
   if($('btnSelfRun2'))$('btnSelfRun2').addEventListener('click',runSelfTest);
   $('btnSettings').addEventListener('click',function(){
     var size=new Blob([localStorage.getItem(KEY)||'']).size;
@@ -561,7 +638,7 @@ function init(){renderCatQuick();
   $('btnSetCsv').addEventListener('click',function(){exportCsv();hideSheet('setSheet');});
   $('btnSetReset').addEventListener('click',function(){if(confirm('清空演示数据？手动记录的账单也会清空。')){var keep=state.rules,consent=state.consent;state={entries:[],rules:keep,consent:consent};seed();save();renderRecent();renderBill();renderRules();renderStats();toast('已重置','ok');}});
   $('btnSelfRun').addEventListener('click',runSelfTest);
-  document.querySelectorAll('[data-close]').forEach(function(b){b.addEventListener('click',function(){hideSheet('billSheet');hideSheet('ruleSheet');hideSheet('setSheet');editingBillId=null;pendingKeeps=[];});});
+  document.querySelectorAll('[data-close]').forEach(function(b){b.addEventListener('click',function(){hideSheet('billSheet');hideSheet('ruleSheet');hideSheet('setSheet');hideSheet('piSheet');editingBillId=null;pendingKeeps=[];});});
   $('btnSheetSave').addEventListener('click',function(){if(!$('billSheet').hidden){if(editingBillId)saveBillEdit();else confirmCurrent();}});
   $('btnDeleteBill').addEventListener('click',deleteBill);
   renderRecent();renderBill();renderRules();renderStats();

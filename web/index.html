@@ -142,6 +142,9 @@
 
       <div class="sec-title">我的规则</div>
       <div id="ruleList" class="rule-list"></div>
+
+      <div class="sec-title">已识别的支付信息</div>
+      <div id="paidItemsList" class="rule-list"></div>
     </section>
 
     <!-- ④ 分析 -->
@@ -169,10 +172,9 @@
           <div class="si-main"><b>通知监听设置</b><span id="listenerSub">已开启 · 支付通知自动入账</span></div>
           <span class="si-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 6l6 6-6 6"/></svg></span>
         </div>
-        <div class="set-item" id="siAi">
-          <span class="si-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></span>
-          <div class="si-main"><b>AI 智能识别</b><span id="aiSub">未配置 · 本地规则自动判断</span></div>
-          <span class="si-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 6l6 6-6 6"/></svg></span>
+        <div class="set-item">
+          <span class="si-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7h16M4 12h10M4 17h13"/></svg></span>
+          <div class="si-main"><b>本地规则判断</b><span>按商户关键词规则自动分类 · 不使用 AI、无网络</span></div>
         </div>
         <div class="set-item" id="siSelf">
           <span class="si-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l7 4v6c0 4-3 6-7 8-4-2-7-4-7-8V7z"/></svg></span>
@@ -236,6 +238,20 @@
     <div class="rule-hint none" id="ruleHint2">选择「忽略通知」时，匹配商户将不再自动入账。</div>
   </div>
   <div class="sheet-foot"><button class="btn-primary block" id="btnRuleSave">保存规则</button></div>
+</div>
+
+<!-- 已识别支付信息处理弹层 -->
+<div class="sheet" id="piSheet" hidden>
+  <div class="sheet-head"><button class="icon-btn" data-close>‹</button><h2 id="piTitle">处理</h2></div>
+  <div class="sheet-body">
+    <div class="s-cat" id="piCatPick"><label>改类型</label></div>
+    <div class="rule-hint none" id="piHint"></div>
+  </div>
+  <div class="sheet-foot">
+    <button class="btn-danger" id="btnPiDiscard">丢弃此信息(不再入这笔)</button>
+    <button class="btn-danger" id="btnPiDelete">删除这几条记录</button>
+    <button class="btn-primary block" id="btnPiSave">保存改类型</button>
+  </div>
 </div>
 
 <!-- 设置与诊断 -->
