@@ -4,31 +4,21 @@ import android.content.Context
 import com.example.notifyledger.data.LedgerRepository
 
 /**
- * 判断链工厂: 方向 A(粘贴文本 / 截图)与方向 B(弹窗)共用同一条判断链 —— 同一套
- * 「AI 判断(可选) + 本地规则兜底」。
+ * 判断器工厂。
  *
- * 顺序: [LlmJudge](启用时首选) → [RuleJudge](确定性兜底)。
- * 全部弃权 → JudgeChain 兜底 Discard(「其他信息直接放弃」的产品语义)。
+ * 已移除 AI 判断: 判断链只有 [RuleJudge](本地规则学习, 无网络、隐私安全)。
+ * 非支付信息一律丢弃, 识别不到商户的支付条目兜底归「其他」, 并可通过规则页学习纠正。
+ *
+ * 扩展点: 将来若再接入新的判断器(如截图 OCR), 只需新增 [Judge] 实现并加入 [chain] 即可。
  */
 object JudgeProvider {
 
-    /** 生产链: LLM(启用时) + 规则(带实时学习规则 provider) */
+    /** 完整判断链: 忽略规则 → 本地规则学习。 */
     fun chain(context: Context): JudgeChain {
-        val repo = LedgerRepository(context.applicationContext)
-        val cfg = LlmConfig.load(context.applicationContext)
-        return JudgeChain(
-            listOf(
-                LlmJudge { cfg },
-                RuleJudge { repo.learnedRules() }
-            )
+        val repo = LedgerRepository.get(context)
+        val judges: MutableList<Judge> = mutableListOf(
+            RuleJudge { repo.learnedRules() }
         )
-    }
-
-    /** 测试/演示链: 可自定义顺序与组合 */
-    fun custom(llmEnabled: Boolean = false, customLlm: LlmJudge? = null, rules: () -> List<com.example.notifyledger.model.LearnedRule>): JudgeChain {
-        val judges = mutableListOf<Judge>()
-        if (llmEnabled || customLlm != null) judges += customLlm ?: LlmJudge()
-        judges += RuleJudge(rules)
         return JudgeChain(judges)
     }
 }

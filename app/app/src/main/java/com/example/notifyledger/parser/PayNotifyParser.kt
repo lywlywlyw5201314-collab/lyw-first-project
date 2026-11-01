@@ -359,23 +359,14 @@ object PayNotifyParser {
     )
 
     /**
-     * 判断链本地入口(与 web judge(text, rules, aiJudge) 对齐):
-     *  传入 aiJudge 时先问 AI(可空), AI 弃权/异常 → RuleJudge 兜底。
-     *  这里 aiJudge 为可空的可调用 lambda。
+     * 判断链本地入口(与 web judge(text, rules) 对齐):
+     *  本地规则判断 —— 解析成功且关键字门通过才 keep, 否则 discard, 不外呼任何 AI。
      */
     fun judge(
         text: String?,
-        learnedRules: List<LearnedRule> = emptyList(),
-        aiJudge: ((String, List<LearnedRule>) -> JudgeResult)? = null
+        learnedRules: List<LearnedRule> = emptyList()
     ): JudgeResult {
-        if (aiJudge != null) {
-            try {
-                val v = aiJudge(text ?: "", learnedRules)
-                if (v.verdict == "discard") return v
-                if (v.verdict == "keep") return v
-            } catch (_: Exception) { /* 弃权 → 规则兜底 */ }
-        }
-        // RuleJudge 兜底
+        // 本地规则判断
         return when (val p = parse(text)) {
             is ParseResult.Failure -> JudgeResult(
                 verdict = "discard",

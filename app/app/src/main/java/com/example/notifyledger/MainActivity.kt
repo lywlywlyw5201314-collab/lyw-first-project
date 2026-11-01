@@ -19,13 +19,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.notifyledger.data.LedgerRepository
 import com.example.notifyledger.judge.JudgeChain
 import com.example.notifyledger.judge.JudgeProvider
-import com.example.notifyledger.judge.LlmConfig
 import com.example.notifyledger.model.Category
 import com.example.notifyledger.model.LedgerEntry
 import com.example.notifyledger.model.LearnedRule
@@ -67,6 +67,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var etRuleMerchant: EditText
     private lateinit var spRuleCat: Spinner
     private lateinit var tvLearned: TextView
+    private lateinit var llPaidItems: LinearLayout
 
     // 账单页筛选
     private lateinit var fCat: Spinner
@@ -77,7 +78,6 @@ class MainActivity : AppCompatActivity() {
     // 分析页
     private lateinit var tvAnalytics: TextView
     private lateinit var tvListenerStatus: TextView
-    private lateinit var tvLlmStatus: TextView
     private lateinit var tvSelfTestResult: TextView
 
     // 页面
@@ -145,13 +145,13 @@ class MainActivity : AppCompatActivity() {
         etRuleMerchant = findViewById(R.id.etRuleMerchant)
         spRuleCat = findViewById(R.id.spRuleCat)
         tvLearned = findViewById(R.id.tvLearned)
+        llPaidItems = findViewById(R.id.llPaidItems)
         fCat = findViewById(R.id.fCat)
         fTime = findViewById(R.id.fTime)
         tvRangeTotal = findViewById(R.id.tvMonthTotal)
         tvRangeCount = findViewById(R.id.tvBillCount)
         tvAnalytics = findViewById(R.id.tvAnalytics)
         tvListenerStatus = findViewById(R.id.tvListenerStatus)
-        tvLlmStatus = findViewById(R.id.tvLlmStatus)
         tvSelfTestResult = findViewById(R.id.tvSelfTestResult)
         pageBook = findViewById(R.id.pageBook)
         pageBill = findViewById(R.id.pageBill)
@@ -208,8 +208,6 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnOpenListenerSettings).setOnClickListener {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
-        findViewById<Button>(R.id.btnLlmSave).setOnClickListener { saveLlmConfig() }
-        findViewById<Button>(R.id.btnLlmClear).setOnClickListener { clearLlmConfig() }
         findViewById<Button>(R.id.btnSelfTest).setOnClickListener { runSelfTest() }
 
         requestPostNotificationPermission()
@@ -223,7 +221,6 @@ class MainActivity : AppCompatActivity() {
             withContext(Dispatchers.IO) { maybeShowTestOcrNote() }
         }
         reloadListenerStatus()
-        reloadLlmStatus()
         reload()
     }
 
@@ -428,7 +425,6 @@ class MainActivity : AppCompatActivity() {
     private fun reloadStatsPage() {
         tvAnalytics.text = buildStats()
         reloadListenerStatus()
-        reloadLlmStatus()
     }
 
     private fun reloadListenerStatus() {
@@ -438,52 +434,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             "未开启: 点「开启通知监听」授权, 通知功能才会生效"
         }
-    }
-
-    private fun reloadLlmStatus() {
-        val cfg = LlmConfig.load(applicationContext)
-        // 打开时回显已存配置: 只填空字段, 不覆盖用户正在编辑的内容
-        val etEndpoint = findViewById<EditText>(R.id.etLlmEndpoint)
-        val etKey = findViewById<EditText>(R.id.etLlmKey)
-        val etModel = findViewById<EditText>(R.id.etLlmModel)
-        if (etEndpoint.text.isNullOrBlank() && cfg.endpoint.isNotEmpty()) etEndpoint.setText(cfg.endpoint)
-        if (etKey.text.isNullOrBlank() && cfg.apiKey.isNotEmpty()) etKey.setText(cfg.apiKey)
-        if (etModel.text.isNullOrBlank()) etModel.setText(cfg.model)
-        tvLlmStatus.text = if (cfg.isEnabled) {
-            "智能识别: 已启用(模型 " + cfg.model + ")"
-        } else {
-            "智能识别: 未配置, 当前由本地规则自动判断"
-        }
-    }
-
-    private fun saveLlmConfig() {
-        val prev = LlmConfig.load(applicationContext)
-        // 空字段继承上次保存值, 防止误把配置抹掉; 要彻底关闭请用「清除 AI 设置」
-        val endpoint = findViewById<EditText>(R.id.etLlmEndpoint).text.toString().trim().ifEmpty { prev.endpoint }
-        val key = findViewById<EditText>(R.id.etLlmKey).text.toString().trim().ifEmpty { prev.apiKey }
-        val model = findViewById<EditText>(R.id.etLlmModel).text.toString().trim().ifEmpty { prev.model }
-        val editor = getSharedPreferences(LlmConfig.PREFS, MODE_PRIVATE).edit()
-        editor.putBoolean("enabled", endpoint.isNotEmpty() && key.isNotEmpty())
-        editor.putString("endpoint", endpoint)
-        editor.putString("apiKey", key)
-        editor.putString("model", model)
-        editor.apply()
-        Toast.makeText(this, "AI 设置已保存", Toast.LENGTH_SHORT).show()
-        reloadLlmStatus()
-    }
-
-    private fun clearLlmConfig() {
-        getSharedPreferences(LlmConfig.PREFS, MODE_PRIVATE).edit()
-            .putBoolean("enabled", false)
-            .putString("endpoint", "")
-            .putString("apiKey", "")
-            .putString("model", LlmConfig.DEFAULT_MODEL)
-            .apply()
-        findViewById<EditText>(R.id.etLlmEndpoint).setText("")
-        findViewById<EditText>(R.id.etLlmKey).setText("")
-        findViewById<EditText>(R.id.etLlmModel).setText(LlmConfig.DEFAULT_MODEL)
-        Toast.makeText(this, "已清除 AI 设置, 恢复本地规则判断", Toast.LENGTH_SHORT).show()
-        reloadLlmStatus()
     }
 
     private fun runSelfTest() {
@@ -524,6 +474,115 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    /* ============ 规则页: 已识别的支付信息(逐条) + 丢弃学习 ============ */
+
+    /** 该条目的信息签名: 商户名; 未识别商户时退回通知原文(去首尾空白) */
+    private fun sigOf(e: LedgerEntry): String =
+        e.merchant?.takeIf { it.isNotBlank() } ?: e.raw?.trim().orEmpty()
+
+    private fun renderPaidItems(all: List<LedgerEntry>) {
+        llPaidItems.removeAllViews()
+        // 只列出弹窗读到的支付条目(手动录入的 source 为 null, 不上列表)
+        // 同一「商户(或原文签名)+金额」合并为一行
+        val groups = LinkedHashMap<Pair<String, Double>, List<LedgerEntry>>()
+        for (e in all) {
+            if (e.source == null) continue
+            val sig = sigOf(e)
+            if (sig.isEmpty()) continue
+            groups.getOrPut(sig to e.amount) { mutableListOf() }.add(e)
+        }
+        if (groups.isEmpty()) {
+            val t = TextView(this)
+            t.text = "暂无(在弹窗里确认支付后, 这里会逐条列出)"
+            t.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
+            t.setTextSize(13f)
+            llPaidItems.addView(t)
+            return
+        }
+        val head = TextView(this)
+        head.text = "共 " + groups.size + " 条"
+        head.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
+        head.setTextSize(13f)
+        llPaidItems.addView(head)
+        val pad = (12 * resources.displayMetrics.density).toInt()
+        for ((key, items) in groups) {
+            val row = TextView(this)
+            val label = if (key.first.length > 20) key.first.take(20) + "…" else key.first
+            row.text = label + "  " + fmt(key.second) + "  ×" + items.size
+            row.setTextColor(ContextCompat.getColor(this, R.color.text_primary))
+            row.setTextSize(14f)
+            row.setPadding(0, pad, 0, pad)
+            row.isClickable = true
+            row.setOnClickListener { pickPaidItemAction(key.first, items) }
+            llPaidItems.addView(row)
+        }
+    }
+
+    /** 点按某条支付信息 → 改类型 / 丢弃此信息 / 删除此记录 */
+    private fun pickPaidItemAction(sig: String, items: List<LedgerEntry>) {
+        val label = if (sig.length > 24) sig.take(24) + "…" else sig
+        AlertDialog.Builder(this)
+            .setTitle("如何处理「" + label + "」?")
+            .setItems(arrayOf("改类型", "丢弃此信息", "删除此记录")) { _, which ->
+                when (which) {
+                    0 -> pickCategoryForGroup(sig, items)
+                    1 -> discardSigItems(sig, items)
+                    else -> deleteSigItems(items)
+                }
+            }
+            .show()
+    }
+
+    /** 改类型: 整组条目改分类 + 学习一条规则(同商户同分类), 保证下一次同信息自动归入此类 */
+    private fun pickCategoryForGroup(sig: String, items: List<LedgerEntry>) {
+        AlertDialog.Builder(this)
+            .setTitle("「" + sig + "」归入哪类?")
+            .setItems(CAT_LABELS.toTypedArray()) { _, which ->
+                val cat = Category.fromLabel(CAT_LABELS[which])
+                items.forEach { repo.updateEntryCategory(it.id, cat.label) }
+                // 只有有商户名的条目才学成规则: 未识别商户没有可匹配的商户名, 原文签名不进 learned_rules
+                val m = items.first().merchant
+                if (m.isNullOrBlank() == false) {
+                    repo.upsertLearnedRule(LearnedRule(m, cat))
+                }
+                Toast.makeText(this, "已改为[" + cat.label + "]; 该信息以后自动归入此类", Toast.LENGTH_LONG).show()
+                reload()
+            }
+            .show()
+    }
+
+    /** 丢弃此信息: 学一条忽略规则(@ignore: 前缀) + 删除本组全部记录; 同签名信息永不再被保留 */
+    private fun discardSigItems(sig: String, items: List<LedgerEntry>) {
+        AlertDialog.Builder(this)
+            .setTitle("丢弃「" + (if (sig.length > 24) sig.take(24) + "…" else sig) + "」?")
+            .setMessage("两件事会同时发生:\n" +
+                "1. 学一条忽略规则: 以后弹窗里再出现这条信息, 直接丢弃, 不再记录;\n" +
+                "2. 删除现有的 " + items.size + " 条对应记录。\n\n" +
+                "如需恢复: 在下方「我的规则」里删掉这条忽略规则。")
+            .setPositiveButton("丢弃") { _, _ ->
+                repo.upsertLearnedRule(LearnedRule("@ignore:" + sig, Category.OTHER))
+                items.forEach { repo.deleteEntry(it.id) }
+                Toast.makeText(this, "已丢弃: 这条信息以后不再记录", Toast.LENGTH_LONG).show()
+                reload()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    /** 删除此记录: 只删账本记录, 不动规则 —— 同信息以后还会被记下来 */
+    private fun deleteSigItems(items: List<LedgerEntry>) {
+        AlertDialog.Builder(this)
+            .setTitle("删除这 " + items.size + " 条记录?")
+            .setMessage("只是从账本里删掉, 不学忽略规则: 同样的弹窗信息以后还会被记下来。")
+            .setPositiveButton("删除") { _, _ ->
+                items.forEach { repo.deleteEntry(it.id) }
+                Toast.makeText(this, "已删除 " + items.size + " 条记录", Toast.LENGTH_SHORT).show()
+                reload()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
     /* ============ 统计 + 学习规则 ============ */
 
     private fun reload() {
@@ -548,6 +607,7 @@ class MainActivity : AppCompatActivity() {
         val cnt = filtered.size
         tvMonthTotal.text = fmt(spend)
         tvBillCount.text = "共 $cnt 笔"
+        renderPaidItems(all)
         tvLearned.text = buildLearnedText()
         tvAnalytics.text = buildStats()
     }

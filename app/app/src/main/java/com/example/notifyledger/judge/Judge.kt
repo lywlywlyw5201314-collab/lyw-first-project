@@ -8,10 +8,10 @@ import com.example.notifyledger.model.LedgerEntry
  * 三态语义(与 web 原型、流程图一致):
  *  - [Keep]     判定为支出支付, 携带入账记录, 写入本地账本
  *  - [Discard]  定论「其他信息」, 直接放弃, 不写入任何账本(仅日志留痕, 便于审计)
- *  - [Abstain]  该判断器不确定(如 AI 未配置 / 模型调用失败), 交给链上的下一个判断器
+ *  - [Abstain]  该判断器不确定, 交给链上的下一个判断器(预留扩展点; 当前仅有本地规则判断器)
  */
 sealed class Verdict {
-    /** 保留: 入账。[via] 标注由哪个判断器做出("llm" / "rule:learned" / "rule:default" / "rule:unknown") */
+    /** 保留: 入账。[via] 标注由哪个判断器做出("rule:learned" / "rule:default" / "rule:unknown") */
     data class Keep(val entry: LedgerEntry, val via: String) : Verdict()
 
     /** 放弃: 「其他信息」。[reason] 说明原因, [raw] 保留原文供审计, [via] 标注判定来源 */
@@ -43,7 +43,7 @@ interface Judge {
  */
 class JudgeChain(private val judges: List<Judge>) {
 
-    /** 忽略规则(用户设置的'忽略通知')命中则直接 Discard, 优先于 LLM/规则判断 */
+    /** 忽略规则(用户设置的'忽略通知')命中则直接 Discard, 优先于规则判断 */
     fun judge(text: String, source: String?, ignoreRules: List<String> = emptyList()): Verdict {
         for (ig in ignoreRules) {
             if (ig.isNotEmpty() && text.contains(ig, ignoreCase = true)) {

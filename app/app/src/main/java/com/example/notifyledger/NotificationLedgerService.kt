@@ -21,11 +21,11 @@ import java.util.concurrent.Executors
  *   通知发布 → 合并 标题+内容
  *   → [关键词入口门] PayNotifyParser.isPaymentRelated:
  *        未命中(天气/短信/群消息/系统…) → 直接忽略, 不做任何记录
- *   → 判断链 JudgeChain( LlmJudge → RuleJudge ):
+ *   → 判断链 JudgeChain( 忽略规则 → RuleJudge 本地规则学习 ):
  *        Keep    → 写入本地账本(LedgerRepository)
  *        Discard → 「其他信息」直接放弃, 不写库, 仅日志留痕
  *
- * 线程模型: 通知回调本身要快; 判断链(可能含 AI 网络调用)在单线程执行器上执行,
+ * 线程模型: 通知回调本身要快; 判断链在单线程执行器上执行,
  * 永不阻塞 NotificationListenerService 主线程。
  */
 class NotificationLedgerService : NotificationListenerService() {
@@ -35,7 +35,7 @@ class NotificationLedgerService : NotificationListenerService() {
     /** 判断链: 延迟构建(首用), 避免服务启动即读 SharedPreferences/数据库 */
     private val chain: JudgeChain by lazy { JudgeProvider.chain(applicationContext) }
 
-    /** 判断执行器: 单线程、daemon、命名 —— AI 网络调用隔离在此 */
+    /** 判断执行器: 单线程、daemon、命名 */
     private val executor = Executors.newSingleThreadExecutor { r ->
         Thread(r, "notify-ledger-judge").apply { isDaemon = true }
     }
