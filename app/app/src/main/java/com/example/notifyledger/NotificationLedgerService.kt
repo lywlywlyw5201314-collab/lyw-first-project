@@ -59,10 +59,10 @@ class NotificationLedgerService : NotificationListenerService() {
 
         // [关键词入口门] 只有带支付关键词的弹窗才进判断层, 其他信息在门前就被忽略
         if (!PayNotifyParser.isPaymentRelated(text)) {
-            Log.d(TAG, "入口门未命中(非支付), 忽略: " + text)
+            Log.d(TAG, "入口门未命中(非支付), 忽略; 原文按隐私约定不落日志")
             return
         }
-        Log.d(TAG, "入口门命中, 进判断层: " + text)
+        Log.d(TAG, "入口门命中, 进判断层; 原文按隐私约定不落日志")
 
         // 同一笔支付的通知可能刷新/重发多次 → 时间窗去重, 防止重复入账
         val parsed = PayNotifyParser.parse(text)
@@ -70,7 +70,7 @@ class NotificationLedgerService : NotificationListenerService() {
             "$text|${String.format(Locale.getDefault(), "%.2f", parsed.amount)}"
         } else text
         if (isDuplicate(dedupKey)) {
-            Log.d(TAG, "去重命中, 跳过: " + dedupKey)
+            Log.d(TAG, "去重命中(原文长度=${dedupKey.length}), 跳过; 去重键按隐私约定不落日志")
             return
         }
 
@@ -83,7 +83,7 @@ class NotificationLedgerService : NotificationListenerService() {
                     Log.i(TAG, "入账 [${v.via}] ${v.entry.amount} ${v.entry.merchant ?: "-"} → ${v.entry.category}")
                 }
                 is Verdict.Discard -> {
-                    Log.i(TAG, "放弃 [${v.via}] ${v.reason} | 原文: ${v.raw}")
+                    Log.i(TAG, "放弃 [${v.via}] ${v.reason} (原文按隐私约定不落日志)")
                 }
                 Verdict.Abstain -> Unit
             }

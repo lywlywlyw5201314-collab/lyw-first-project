@@ -34,8 +34,7 @@ object OcrHelper {
             return emptyList()
         }
         val cleaned = PayNotifyParser.cleanOcrText(raw)
-        Log.i("OcrHelper", "OCR 原始识别文本: " + raw)
-        Log.i("OcrHelper", "清洗后文本: " + cleaned)
+        Log.i("OcrHelper", "OCR 完成: 原文 " + raw.length + " 字符, 清洗后 " + cleaned.length + " 字符 (原文内容按隐私约定不落日志)")
         val segs = PayNotifyParser.splitTransactions(cleaned)
         val segments = if (segs.isNotEmpty()) segs else listOf(cleaned)
         Log.i("OcrHelper", "拆分出 " + segments.size + " 个交易段")
