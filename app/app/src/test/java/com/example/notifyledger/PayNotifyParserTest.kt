@@ -1,4 +1,4 @@
-﻿package com.example.notifyledger
+package com.example.notifyledger
 
 import com.example.notifyledger.model.Category
 import com.example.notifyledger.model.ParseResult
@@ -46,6 +46,14 @@ class PayNotifyParserTest {
         assertEquals(23.5, s.amount, 0.0001)
         assertEquals("XX便利店", s.merchant)
         assertEquals("12:47", s.time)
+    }
+    @Test
+    fun wechatPaySuccess_merchantClean() {
+        val p = P.parse("微信支付成功 ¥12.30 瑞幸咖啡 13:05")
+        assertTrue(p is ParseResult.Success)
+        val s = p as ParseResult.Success
+        assertEquals("瑞幸咖啡", s.merchant)
+        assertEquals(12.3, s.amount, 0.0001)
     }
 
     @Test

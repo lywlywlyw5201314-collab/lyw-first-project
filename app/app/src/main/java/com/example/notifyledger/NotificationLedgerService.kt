@@ -69,7 +69,10 @@ class NotificationLedgerService : NotificationListenerService() {
         val dedupKey = if (parsed is ParseResult.Success) {
             "$text|${String.format(Locale.getDefault(), "%.2f", parsed.amount)}"
         } else text
-        if (isDuplicate(dedupKey)) return
+        if (isDuplicate(dedupKey)) {
+            Log.d(TAG, "去重命中, 跳过: " + dedupKey)
+            return
+        }
 
         executor.execute {
             val source = PayNotifyParser.detectSource(text)

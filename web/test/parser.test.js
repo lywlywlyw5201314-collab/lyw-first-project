@@ -36,6 +36,12 @@ report('微信消费: 金额/商户/时间/来源', function () {
   assert.strictEqual(p.merchant, 'XX便利店');
   assert.strictEqual(p.time, '12:47');
 });
+report('微信支付成功 不留成功前缀到商户', function () {
+  var p = P.parse('微信支付成功 ¥12.30 瑞幸咖啡 13:05');
+  assert.strictEqual(p.ok, true);
+  assert.strictEqual(p.merchant, '瑞幸咖啡');
+  assert.strictEqual(p.amount, 12.3);
+});
 report('便利店 → 购物', function () {
   assert.strictEqual(P.classify('XX便利店', []).category, 'shopping');
 });
