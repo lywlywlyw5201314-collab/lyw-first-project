@@ -68,3 +68,28 @@ _gen_pdf.py
 _gen_pdf2.py
 _claude_readonly_dump_app.txt
 _claude_readonly_dump_web.txt
+
+# ===== 评审 §2.8 仓库卫生(2026-11-03 补漏)=====
+# 顶层调试杂物通配(不再逐名列写)
+/_*
+/CODEX_HANDOFF.md
+/apk测试2026-10-25.pdf
+app/*.png
+logs/*.log
+logs/*.md
+web/*.bak
+# verify 目录调试产物(补漏原有逐行模式未覆盖的)
+verify/*.png
+verify/*.js
+verify/*.zip
+verify/*.bak
+verify/CONTINUE.md
+verify/codexdb_copy/
+# 保留开发日志 PDF 入库(不受 logs/*.pdf 忽略影响)
+!logs/devlog-*.pdf
+# 追加补漏(第二轮 status 扫尾)
+/.claude_readonly_dump_*.txt
+/app/ui.xml
+web/*.png
+web/CONTINUE.md
+/*.svg
