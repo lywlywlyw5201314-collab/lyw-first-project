@@ -41,9 +41,9 @@ configurations.all {
 }
 
 dependencies {
-    // UI 基础库(旧版, 待 AGP 9.5.0 工具链落地后逐条升级至目标版本)
+    // 批1 依赖: 逐条升级, 每条独立提交(目标: appcompat 1.8.0 / material 1.14.0 / recyclerview 1.4.0 / core-ktx 1.19.1)
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("androidx.appcompat:appcompat:1.8.0")
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 
