@@ -1,11 +1,10 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
     namespace = "com.example.notifyledger"
-    compileSdk = 34
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.example.notifyledger"
@@ -42,6 +41,7 @@ configurations.all {
 }
 
 dependencies {
+    // UI 基础库(旧版, 待 AGP 9.5.0 工具链落地后逐条升级至目标版本)
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
