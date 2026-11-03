@@ -35,7 +35,7 @@ class TestCommandReceiver : BroadcastReceiver() {
                 val text = if (textB64 != null) {
                     String(Base64.decode(textB64, Base64.DEFAULT), Charsets.UTF_8)
                 } else (intent?.extras?.getString(EXTRA_TEXT) ?: "")
-                Log.i(TAG, "TEST_PASTE 收到文本=" + text)
+                Log.i(TAG, "TEST_PASTE 收到文本 " + text.length + " 字 (原文按隐私约定不落日志)")
 
                 val launch = Intent(context, MainActivity::class.java).apply {
                     putExtra(EXTRA_TEST_PASTE_TEXT, text)
@@ -95,8 +95,8 @@ class TestCommandReceiver : BroadcastReceiver() {
 
                 val text = if (textB64 != null) String(Base64.decode(textB64, Base64.DEFAULT), Charsets.UTF_8) else "支付成功 ¥23.50 XX便利店 12:47"
                 TestHelper.postTestNotification(context, title, text)
-                writeNote(context, "notification_sent", "已发一条支付通知: " + title + " " + text + ", 等 NotificationLedgerService 自动入账")
-                Log.i(TAG, "TEST_PAYMENT_NOTIFICATION 已发: " + title + " | " + text)
+                writeNote(context, "notification_sent", "已发一条支付通知(标题 " + title.length + "字, 正文 " + text.length + "字), 等 NotificationLedgerService 自动入账")
+                Log.i(TAG, "TEST_PAYMENT_NOTIFICATION 已发: 标题 " + title.length + "字, 正文 " + text.length + "字 (原文按隐私约定不落日志)")
             }
             ACTION_TEST_NONPAY -> {
                 TestHelper.postTestNotification(context, "天气", "明天多云转晴, 最高 18 度")
