@@ -45,7 +45,7 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.8.0")
     implementation("com.google.android.material:material:1.14.0")
-    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation("androidx.recyclerview:recyclerview:1.4.0")
 
     // ML Kit 本地 OCR(离线): chinese 语言包(v2 API, 含 TextRecognizer 接口与 Options)
     implementation("com.google.android.gms:play-services-mlkit-text-recognition-chinese:16.0.0")
