@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- §3.1: 删掉没用到的 INTERNET。证据: 全工程 .kt 源码 0 处网络调用(无 java.net/HttpURLConnection/Socket/okhttp/retrofit),
+         依赖里也没有任何网络库; 设备 dumpsys 取证见 docs/。POST_NOTIFICATIONS 是 TestCommandReceiver 发测试通知必需的, 保留。 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
