@@ -10,6 +10,9 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
+import com.example.notifyledger.judge.JudgeChain
+import com.example.notifyledger.judge.JudgeProvider
+import com.example.notifyledger.judge.Verdict
 import com.example.notifyledger.parser.PayNotifyParser
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -25,7 +28,9 @@ object OcrHelper {
 
     /** 识别一张截图, 返回 保留入账的 判断结果 列表(不含放弃项)。
      *  引擎不可用(例如模拟器缺 GMS/ML Kit 运行时依赖)返回 null, 由上层按"本地 OCR 引擎不可用"提示;
-     *  未识别到文本(非支付截图)返回空列表。不抛出, 由上层按"未识别到支付信息"处理并在界面提示。 */
+     *  未识别到文本(非支付截图)返回空列表。不抛出, 由上层按"未识别到支付信息"处理并在界面提示。
+     *  §2.3: 判断改走 JudgeProvider.chain(context) 生成的 JudgeChain(本地规则从
+     *  LedgerRepository 实时读取), 入参 learnedRules 仅作调用方快照提示, 不参与判断。 */
     suspend fun recognizeAndJudge(
         context: Context,
         imageUri: Uri,
@@ -47,8 +52,32 @@ object OcrHelper {
         Log.i("OcrHelper", "拆分出 " + segments.size + " 个交易段")
         val keeps = mutableListOf<PayNotifyParser.JudgeResult>()
         val discards = mutableListOf<PayNotifyParser.JudgeResult>()
+        val chain = JudgeProvider.chain(context)
         segments.forEach { seg ->
-            val v = PayNotifyParser.judge(seg, learnedRules)
+            val v = when (val verdict = chain.judge(seg, source = null)) {
+                is Verdict.Keep -> PayNotifyParser.JudgeResult(
+                    verdict = "keep",
+                    amount = verdict.entry.amount,
+                    merchant = verdict.entry.merchant,
+                    source = verdict.entry.source,
+                    time = null,
+                    category = verdict.entry.category,
+                    via = verdict.via,
+                    raw = verdict.entry.raw
+                )
+                is Verdict.Discard -> PayNotifyParser.JudgeResult(
+                    verdict = "discard",
+                    reason = verdict.reason,
+                    via = verdict.via,
+                    raw = verdict.raw
+                )
+                else -> PayNotifyParser.JudgeResult(
+                    verdict = "discard",
+                    reason = JudgeChain.ABSTAIN_ALL_REASON,
+                    via = "chain",
+                    raw = seg
+                )
+            }
             if (v.verdict == "keep") keeps += v else discards += v
         }
         Log.i("OcrHelper", "保留 " + keeps.size + " 笔, 丢弃 " + discards.size + " 笔")
