@@ -23,7 +23,7 @@ import java.io.File
  *  - TEST_PAYMENT_NOTIFICATION --es text_b64 <base64正文> [--es title_b64 <base64标题>]: 发一条真实支付通知,
  *      依赖已授权的 NotificationLedgerService 监听 → 自动入账(方向B完整链路)
 
- *  - TEST_NONPAY_NOTIFICATION  发一条非支付通知, 用于验证"其余信息直接丢弃"逻辑
+ *  - TEST_NONPAY          发一条非支付通知, 用于验证"其余信息直接丢弃"逻辑
  */
 class TestCommandReceiver : BroadcastReceiver() {
 

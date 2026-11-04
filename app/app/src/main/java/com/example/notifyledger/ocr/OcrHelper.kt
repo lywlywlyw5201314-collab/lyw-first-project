@@ -23,9 +23,6 @@ object OcrHelper {
     /** 本地 OCR 引擎不可用(缺 GMS)的哨兵文本, 上层据此提示需真机/GMS 环境 */
     private const val ERROR_UNAVAILABLE = "__ocr_unavailable__"
 
-    /** 本地 OCR 引擎不可用(缺 GMS)的哨兵文本, 上层据此提示需真机/GMS 环境 */
-
-
     /** 识别一张截图, 返回 保留入账的 判断结果 列表(不含放弃项)。
      *  引擎不可用(例如模拟器缺 GMS/ML Kit 运行时依赖)返回 null, 由上层按"本地 OCR 引擎不可用"提示;
      *  未识别到文本(非支付截图)返回空列表。不抛出, 由上层按"未识别到支付信息"处理并在界面提示。
