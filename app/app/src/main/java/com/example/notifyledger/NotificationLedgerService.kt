@@ -11,8 +11,10 @@ import com.example.notifyledger.judge.JudgeProvider
 import com.example.notifyledger.judge.Verdict
 import com.example.notifyledger.parser.PayNotifyParser
 import com.example.notifyledger.model.ParseResult
-import java.util.Locale
+import com.example.notifyledger.util.TimeUtil
+import java.security.MessageDigest
 import java.util.concurrent.Executors
+import kotlin.math.roundToLong
 
 /**
  * 方向 B 的服务端: 监听系统通知(支付 App 的弹窗)。
@@ -65,12 +67,17 @@ class NotificationLedgerService : NotificationListenerService() {
         Log.d(TAG, "入口门命中, 进判断层; 原文按隐私约定不落日志")
 
         // 同一笔支付的通知可能刷新/重发多次 → 时间窗去重, 防止重复入账
+        // §3.3 去重键不再依赖系统 locale: 旧键用 String.format 按系统格式生成小数(中文/德语等
+        // locale 下小数点不同, 同一笔支付会生成不同的键, 5 分钟去重窗口就失效了)。
+        // 现在成功解析的键 = 整数分 + 商户 + 当天日期(全部与 locale 无关); 解析失败用原文 MD5 摘要。
         val parsed = PayNotifyParser.parse(text)
         val dedupKey = if (parsed is ParseResult.Success) {
-            "$text|${String.format(Locale.getDefault(), "%.2f", parsed.amount)}"
-        } else text
+            "P|${(parsed.amount * 100).roundToLong()}|${parsed.merchant ?: ""}|${TimeUtil.todayDay()}"
+        } else {
+            "F|" + md5Hex(text)
+        }
         if (isDuplicate(dedupKey)) {
-            Log.d(TAG, "去重命中(原文长度=${dedupKey.length}), 跳过; 去重键按隐私约定不落日志")
+            Log.d(TAG, "去重命中(键摘要=${md5Hex(dedupKey).take(12)}), 跳过; 按隐私约定只记键的摘要, 原文与键本身都不落日志")
             return
         }
 
@@ -136,6 +143,12 @@ class NotificationLedgerService : NotificationListenerService() {
         val drop = recentKeys.toList().sortedBy { it.second }.take(recentKeys.size - MAX_DEDUP_KEYS)
         drop.forEach { recentKeys.remove(it.first) }
     }
+
+    /** 算字符串的 MD5 摘要, 输出小写十六进制(固定 UTF-8, 与系统 locale 无关), 用于去重键的"指纹"日志 */
+    private fun md5Hex(s: String): String =
+        MessageDigest.getInstance("MD5")
+            .digest(s.toByteArray(Charsets.UTF_8))
+            .joinToString("") { b -> b.toUByte().toString(16).padStart(2, '0') }
 
     companion object {
         private const val TAG = "NotifyLedger"

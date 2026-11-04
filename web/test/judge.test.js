@@ -14,7 +14,7 @@
 
   console.log('[judge] 应保留(keep)的支付通知');
   var k1 = P.judge('微信支付 支付成功 ¥23.50 XX便利店 12:47', []);
-  check('便利店消费保留', k1.verdict === 'keep' && k1.entry.amount === 23.5 && k1.entry.merchant === 'XX便利店', JSON.stringify(k1));
+  check('便利店消费保留', k1.verdict === 'keep' && k1.entry.amountCents === 2350 && k1.entry.merchant === 'XX便利店', JSON.stringify(k1));
   var k2 = P.judge('滴滴出行 订单完成 车费 12.50元 2026-10-20 08:05', []);
   check('滴滴打车保留(交通)', k2.verdict === 'keep' && k2.entry.category === 'transport', JSON.stringify(k2.entry));
   var k3 = P.judge('中国移动 话费账单 支付成功 29.00元', []);

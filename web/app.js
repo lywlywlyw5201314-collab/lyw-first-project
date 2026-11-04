@@ -18,14 +18,21 @@ var SRC_COLOR={'微信':'#2ea56b','支付宝':'#2f7cf6','银联':'#f5a623'};
 function seed(){
   var t=todayStr();
   state.entries=[
-    {id:uid(),date:t,time:'08:12',source:'微信',merchant:'豆浆油条铺',amount:8,category:'dining',raw:'微信支付 扣款成功 ¥8.00 豆浆油条铺 08:12',income:false},
-    {id:uid(),date:t,time:'12:30',source:'支付宝',merchant:'美团外卖',amount:15,category:'dining',raw:'支付宝 向美团外卖支付 15.00元',income:false},
-    {id:uid(),date:t,time:'12:47',source:'微信',merchant:'XX便利店',amount:23.5,category:'shopping',raw:'微信支付 支付成功 ¥23.50 XX便利店 12:47',income:false}
+    {id:uid(),date:t,time:'08:12',source:'微信',merchant:'豆浆油条铺',amountCents:800,category:'dining',raw:'微信支付 扣款成功 ¥8.00 豆浆油条铺 08:12',income:false},
+    {id:uid(),date:t,time:'12:30',source:'支付宝',merchant:'美团外卖',amountCents:1500,category:'dining',raw:'支付宝 向美团外卖支付 15.00元',income:false},
+    {id:uid(),date:t,time:'12:47',source:'微信',merchant:'XX便利店',amountCents:2350,category:'shopping',raw:'微信支付 支付成功 ¥23.50 XX便利店 12:47',income:false}
   ];
 }
 function initState(){
   state=load();
   if(!state||!Array.isArray(state.entries)){state={entries:[],rules:[],consent:false};seed();save();}
+  // 老数据迁移(§2.1): 旧版账本金额存"元"(e.amount, 小数), 新版统一存"整数分"(e.amountCents)。
+  // 老用户第一次打开新版时, 把每条旧记录换算成分并删掉旧字段; 新数据和已迁移数据不受影响。
+  state.entries.forEach(function(e){
+    if(e.amountCents==null&&e.amount!=null){e.amountCents=Math.round(Number(e.amount)*100);}
+    delete e.amount;
+  });
+  save();
   if(typeof state.consent!=='boolean')state.consent=false;
   if(!Array.isArray(state.rules))state.rules=[];
 }
@@ -71,7 +78,7 @@ function openConfirm(item,idx){
   $('shIc').style.background=SRC_COLOR[e.source]||'#aeaeb2';
   $('shName').textContent=e.source||'未知来源';
   $('shTag').textContent='支付成功';
-  $('shAmt').textContent='¥'+fmt(e.amount);
+  $('shAmt').textContent='¥'+fmt((e.amountCents||0)/100);
   $('shMerchant').value=e.merchant||'';
   $('shSource').value=e.source||'未知';
   $('shTime').value=e.time||nowHHMM();
@@ -110,7 +117,7 @@ function confirmCurrent(){
   var item=pendingKeeps[confirmIdx];if(!item)return;
   var e=item.e;
   state.entries.push({id:uid(),date:todayStr(),time:e.time||nowHHMM(),source:e.source||'未知',
-    merchant:e.merchant||'未知商户',amount:e.amount,category:curCat.val||e.category,
+    merchant:e.merchant||'未知商户',amountCents:e.amountCents,category:curCat.val||e.category,
     raw:item.seg,income:false,note:$('shNote').value});
   save();
   if(curCat.val&&curCat.val!==(e.category||'other'))state.rules=P.learn(state.entries[state.entries.length-1].merchant,curCat.val,state.rules),save();
@@ -184,11 +191,11 @@ function renderBill(){
   if(billFilter.cat)list=list.filter(function(e){return e.category===billFilter.cat;});
   if(billFilter.src)list=list.filter(function(e){return(e.source||'')===billFilter.src;});
   list=list.filter(inTimeRange);
-  var out=list.filter(function(e){return!e.income;}).reduce(function(s,e){return s+e.amount;},0);
-  var inc=list.filter(function(e){return e.income;}).reduce(function(s,e){return s+e.amount;},0);
+  var out=list.filter(function(e){return!e.income;}).reduce(function(s,e){return s+(e.amountCents||0);},0);
+  var inc=list.filter(function(e){return e.income;}).reduce(function(s,e){return s+(e.amountCents||0);},0);
   var sum=$('billSummary');
   var rangeLabel=billFilter.days===1?'今日':(billFilter.days===0?'全部':'近'+billFilter.days+'天');
-  if(list.length){sum.hidden=false;var _billCnt=list.filter(function(e){return!e.income;}).length;sum.innerHTML='<div class="bs"><span>'+rangeLabel+'支出</span><b>¥'+fmt(out)+'</b></div><div class="bs cnt"><span>共</span><b>'+_billCnt+' 笔</b></div>';}
+  if(list.length){sum.hidden=false;var _billCnt=list.filter(function(e){return!e.income;}).length;sum.innerHTML='<div class="bs"><span>'+rangeLabel+'支出</span><b>¥'+fmt(out/100)+'</b></div><div class="bs cnt"><span>共</span><b>'+_billCnt+' 笔</b></div>';}
   else sum.hidden=true;
   if(!list.length){ul.innerHTML='<div class="empty">没有符合条件的账单</div>';return;}
   list.sort(function(a,b){return(b.date+b.time).localeCompare(a.date+a.time);});
@@ -205,7 +212,7 @@ function renderBill(){
       var ms=document.createElement('span');ms.textContent=(e.source?e.source+' · ':'')+(CATS[e.category]||'其他');
       main.appendChild(mb);main.appendChild(ms);
       var right=document.createElement('div');right.className='b-right';
-      var rb=document.createElement('b');rb.className=e.income?'in-c':'out';rb.textContent=(e.income?'+':'-')+'¥'+fmt(e.amount);
+      var rb=document.createElement('b');rb.className=e.income?'in-c':'out';rb.textContent=(e.income?'+':'-')+'¥'+fmt((e.amountCents||0)/100);
       var rs=document.createElement('span');rs.textContent=e.time||'';
       right.appendChild(rb);right.appendChild(rs);
       row.appendChild(ic);row.appendChild(main);row.appendChild(right);
@@ -224,7 +231,7 @@ function openEditBill(e){
   $('shIc').style.background=SRC_COLOR[e.source]||'#aeaeb2';
   $('shName').textContent=e.source||'未知来源';
   $('shTag').textContent=e.income?'收入':'支出';
-  $('shAmt').textContent=(e.income?'+':'')+'¥'+fmt(e.amount);
+  $('shAmt').textContent=(e.income?'+':'')+'¥'+fmt((e.amountCents||0)/100);
   $('shMerchant').value=e.merchant||'';
   $('shSource').value=e.source||'未知';
   $('shTime').value=e.time||'';
@@ -262,7 +269,7 @@ function deleteBill(){
 function exportCsv(){
   var rows=[['日期','时间','来源','商户','金额','分类','备注','收入']];
   state.entries.slice().sort(function(a,b){return(a.date+a.time).localeCompare(b.date+b.time);}).forEach(function(e){
-    rows.push([e.date,e.time,e.source||'',e.merchant||'',fmt(e.amount),CATS[e.category]||e.category,String(e.note||e.raw||''),e.income?'是':'否']);
+    rows.push([e.date,e.time,e.source||'',e.merchant||'',fmt((e.amountCents||0)/100),CATS[e.category]||e.category,String(e.note||e.raw||''),e.income?'是':'否']);
   });
   var csv=rows.map(function(r){return r.map(function(c){return'"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
   var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
@@ -368,8 +375,8 @@ function paidItems(){
   state.entries.forEach(function(e){
     if(!e.raw||e.raw==='手动录入')return;
     var sig=paidGroupOf(e);if(!sig)return;
-    var key=sig+'|'+e.amount;
-    if(!map[key]){map[key]={sig:sig,amount:e.amount,items:[]};order.push(key);}
+    var key=sig+'|'+(e.amountCents||0);
+    if(!map[key]){map[key]={sig:sig,amountCents:e.amountCents,items:[]};order.push(key);}
     map[key].items.push(e);
   });
   return order.map(function(k){return map[k];});
@@ -389,7 +396,7 @@ function renderPaidItems(){
     var m=document.createElement('div');m.className='ri-main';
     m.innerHTML='<b></b><span></span>';
     m.children[0].textContent=g.sig;
-    m.children[1].textContent='¥'+fmt(g.amount)+' · '+(CATS[g.items[0].category]||'其他')+' · 点一下处理';
+    m.children[1].textContent='¥'+fmt((g.amountCents||0)/100)+' · '+(CATS[g.items[0].category]||'其他')+' · 点一下处理';
     var c=document.createElement('span');c.className='ri-count';c.textContent='×'+g.items.length;
     li.appendChild(ic);li.appendChild(m);li.appendChild(c);
     li.addEventListener('click',function(){openPaidItem(g);});
@@ -399,7 +406,7 @@ function renderPaidItems(){
 function openPaidItem(g){
   curPiGroup=g;
   piCat.val=g.items[0].category||'other';
-  if($('piTitle'))$('piTitle').textContent='处理: '+g.sig+' '+fmt(g.amount);
+  if($('piTitle'))$('piTitle').textContent='处理: '+g.sig+' '+fmt((g.amountCents||0)/100);
   if($('piHint')){$('piHint').textContent='共 '+g.items.length+' 条记录 · 丢弃会同时删掉这些记录, 且同样的信息以后不再自动入账';$('piHint').className='rule-hint';}
   renderCatPick('piCatPick',piCat.val);
   showSheet('piSheet');
@@ -415,7 +422,7 @@ function piSave(){
 function piDiscard(){
   var g=curPiGroup;if(!g)return;
   var kw=paidGroupOf(g.items[0]);
-  if(!confirm('将同时发生两件事:\n1. 「'+kw+' '+fmt(g.amount)+'」以后不再自动入账\n2. 已记录的 '+g.items.length+' 条账单一并删除\n\n如需恢复, 可回到「我的规则」删掉该忽略规则'))return;
+  if(!confirm('将同时发生两件事:\n1. 「'+kw+' '+fmt((g.amountCents||0)/100)+'」以后不再自动入账\n2. 已记录的 '+g.items.length+' 条账单一并删除\n\n如需恢复, 可回到「我的规则」删掉该忽略规则'))return;
   state.rules=P.learn(kw,'other',state.rules);
   var r=state.rules.find(function(x){return x.merchant.toLowerCase()===kw.toLowerCase();});
   if(r){r.ignore=true;r.enabled=true;}
@@ -443,17 +450,17 @@ function renderStats(){
     return new Date(e.date+'T00:00:00')>=cut;
   }
   var rel=entries.filter(inRange).filter(function(e){return!e.income;});
-  var total=rel.reduce(function(s,e){return s+e.amount;},0);
+  var total=rel.reduce(function(s,e){return s+(e.amountCents||0);},0);
   var cnt=rel.length;
   var rangeLabel=statRangeDays===1?'今日':(statRangeDays===0?'全部':'近 '+statRangeDays+' 天');
 
   // 支出概述: 总支出 + 交易笔数 (同一时间范围)
   var cards=$('statCards');
-  cards.innerHTML='<div class="sc hl"><span>'+rangeLabel+'支出</span><b>¥'+fmt(total)+'</b></div>'+
+  cards.innerHTML='<div class="sc hl"><span>'+rangeLabel+'支出</span><b>¥'+fmt(total/100)+'</b></div>'+
     '<div class="sc"><span>交易笔数</span><b>'+cnt+'</b></div>';
 
   // 分类占比 (环形图) - 来自筛选结果
-  var byCat={};rel.forEach(function(e){byCat[e.category]=(byCat[e.category]||0)+e.amount;});
+  var byCat={};rel.forEach(function(e){byCat[e.category]=(byCat[e.category]||0)+(e.amountCents||0);});
   var catEl=$('statCats');catEl.innerHTML='';
   var donutEl=$('donut');donutEl.innerHTML='';
   var keys=Object.keys(CATS).filter(function(k){return byCat[k];}).sort(function(a,b){return byCat[b]-byCat[a];});
@@ -467,7 +474,7 @@ function renderStats(){
   donutEl.innerHTML=svg+'<div class="d-center"><b>'+topPct+'%</b><span>'+CATS[topKey]+'</span></div>';
   keys.forEach(function(k){var v=byCat[k],pct=Math.round(v/total*100)||0;
     var lg=document.createElement('div');lg.className='lg';
-    lg.innerHTML='<span class="lg-dot" style="background:'+(CAT_COLOR[k]||'#929B94')+'"></span><span class="lg-name">'+CATS[k]+'</span><span class="lg-val">'+pct+'%<span>¥'+fmt(v)+'</span></span>';
+    lg.innerHTML='<span class="lg-dot" style="background:'+(CAT_COLOR[k]||'#929B94')+'"></span><span class="lg-name">'+CATS[k]+'</span><span class="lg-val">'+pct+'%<span>¥'+fmt(v/100)+'</span></span>';
     catEl.appendChild(lg);
   });
 
@@ -491,8 +498,8 @@ function renderTrend(rel){
       var m=new Date(now.getFullYear(),now.getMonth()-mi,1);
       var key=m.getFullYear()+'-'+pad(m.getMonth()+1);
       var items=rel.filter(function(e){return e.date.slice(0,7)===key;});
-      var byCat={};items.forEach(function(e){byCat[e.category]=(byCat[e.category]||0)+e.amount;});
-      buckets.push({label:(+key.split('-')[1])+'月',byCat:byCat,total:items.reduce(function(s,e){return s+e.amount;},0),isToday:false});
+      var byCat={};items.forEach(function(e){byCat[e.category]=(byCat[e.category]||0)+(e.amountCents||0);});
+      buckets.push({label:(+key.split('-')[1])+'月',byCat:byCat,total:items.reduce(function(s,e){return s+(e.amountCents||0);},0),isToday:false});
     }
   }else{
     var n2=statRangeDays||7;
@@ -500,8 +507,8 @@ function renderTrend(rel){
       var d=new Date();d.setDate(d.getDate()-i);
       var ds=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
       var items=rel.filter(function(e){return e.date===ds;});
-      var byCat={};items.forEach(function(e){byCat[e.category]=(byCat[e.category]||0)+e.amount;});
-      buckets.push({label:i===0?'今天':ds.slice(5),byCat:byCat,total:items.reduce(function(s,e){return s+e.amount;},0),isToday:i===0});
+      var byCat={};items.forEach(function(e){byCat[e.category]=(byCat[e.category]||0)+(e.amountCents||0);});
+      buckets.push({label:i===0?'今天':ds.slice(5),byCat:byCat,total:items.reduce(function(s,e){return s+(e.amountCents||0);},0),isToday:i===0});
     }
   }
   var max=Math.max.apply(null,buckets.map(function(b){return b.total;}))||1;
@@ -515,16 +522,16 @@ function renderTrend(rel){
       var h=Math.max(2,Math.round(v/max*100));
       var seg=document.createElement('div');seg.className='dseg';
       seg.style.height=h+'%';seg.style.background=CAT_COLOR[k]||'#929B94';
-      seg.title=CATS[k]+' ¥'+fmt(v);
+      seg.title=CATS[k]+' ¥'+fmt(v/100);
       stack.appendChild(seg);
     });
-    var val=document.createElement('div');val.className='dval';val.textContent=b.total?'¥'+fmt(b.total):'';
+    var val=document.createElement('div');val.className='dval';val.textContent=b.total?'¥'+fmt(b.total/100):'';
     var lab=document.createElement('div');lab.className='dlab'+(b.isToday?' today':'');lab.textContent=b.label;
     col.appendChild(val);col.appendChild(stack);col.appendChild(lab);
     de.appendChild(col);
   });
 }
-function byCatTotals(rel){var o={};rel.forEach(function(e){o[e.category]=(o[e.category]||0)+e.amount;});return o;}
+function byCatTotals(rel){var o={};rel.forEach(function(e){o[e.category]=(o[e.category]||0)+(e.amountCents||0);});return o;}
 
 /* 最近一笔 */
 function renderRecent(){
@@ -534,7 +541,7 @@ function renderRecent(){
   if(!state.entries.length){if(host)host.remove();return;}
   var last=state.entries.slice().sort(function(a,b){return(b.date+b.time).localeCompare(a.date+a.time);})[0];
   if(!host){host=document.createElement('div');host.className='recent-inline card';cq.after(host);}
-  host.innerHTML='<h3>最近一笔</h3><div class="ri-row"><b>'+ (last.merchant||'未知商户') +'</b><span>'+(last.source||'')+' · '+(last.time||'')+'</span><em>'+ (last.income?'+':'-') +'¥'+fmt(last.amount) +'</em></div>';
+  host.innerHTML='<h3>最近一笔</h3><div class="ri-row"><b>'+ (last.merchant||'未知商户') +'</b><span>'+(last.source||'')+' · '+(last.time||'')+'</span><em>'+ (last.income?'+':'-') +'¥'+fmt((last.amountCents||0)/100) +'</em></div>';
 }
 
 /* 自检 */
@@ -571,7 +578,7 @@ function manualAdd(prefCat){
   var cat=(prefCat&&CATS[prefCat])?prefCat:($('mCat').value||'other');
   if(prefCat)$('mCat').value=cat;
   var src=$('mSource').value||'现金';
-  state.entries.push({id:uid(),date:todayStr(),time:nowHHMM(),source:src,merchant:m,amount:amt,category:cat,raw:'手动录入',income:false,note:''});
+  state.entries.push({id:uid(),date:todayStr(),time:nowHHMM(),source:src,merchant:m,amountCents:Math.round(amt*100),category:cat,raw:'手动录入',income:false,note:''});
   save();
   $('mAmount').value='';$('mMerchant').value='';
   renderRecent();renderBill();renderStats();

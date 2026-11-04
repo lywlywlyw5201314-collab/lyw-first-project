@@ -315,7 +315,7 @@
     return {
       verdict: 'keep',
       entry: {
-        source: p.source, amount: p.amount, merchant: p.merchant,
+        source: p.source, amountCents: Math.round(p.amount * 100), merchant: p.merchant,
         time: p.time, raw: text, category: cr.category, via: cr.via
       }
     };
