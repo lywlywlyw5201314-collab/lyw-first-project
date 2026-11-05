@@ -3,11 +3,11 @@ package com.example.notifyledger
 import com.example.notifyledger.model.Category
 import com.example.notifyledger.model.ParseResult
 import com.example.notifyledger.parser.PayNotifyParser
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 
 /**
  * PayNotifyParser JUnit 单测 —— 与 web 端 test/parser.test.js 完全同构:
@@ -19,6 +19,7 @@ import org.junit.Test
  *  [5] 来源识别(镜像 JS 组 [5], 4 项)
  *
  * 任何一侧改了解析行为, 两侧测试必须同步修改(单一事实来源 = web/parser.js)。
+ * 评审§F: 已迁到 JUnit 5(jupiter), 断言统一用"条件在前、消息在后"。
  */
 class PayNotifyParserTest {
 
@@ -31,7 +32,7 @@ class PayNotifyParserTest {
         val results = P.selfTest()
         assertEquals(9, results.size)
         results.forEach { r ->
-            assertTrue("自检用例失败: ${r.name}\n${r.detail}", r.ok)
+            assertTrue(r.ok, "自检用例失败: ${r.name}\n${r.detail}")
         }
     }
 
