@@ -358,35 +358,5 @@ object PayNotifyParser {
         val raw: String? = null
     )
 
-    /**
-     * 判断链本地入口(与 web judge(text, rules) 对齐):
-     *  本地规则判断 —— 解析成功且关键字门通过才 keep, 否则 discard, 不外呼任何 AI。
-     */
-    fun judge(
-        text: String?,
-        learnedRules: List<LearnedRule> = emptyList()
-    ): JudgeResult {
-        // 本地规则判断
-        return when (val p = parse(text)) {
-            is ParseResult.Failure -> JudgeResult(
-                verdict = "discard",
-                reason = p.reason,
-                raw = text
-            )
-            is ParseResult.Success -> {
-                val cr = classify(p.merchant, learnedRules)
-                JudgeResult(
-                    verdict = "keep",
-                    amount = p.amount,
-                    merchant = p.merchant,
-                    source = p.source,
-                    time = p.time,
-                    category = cr.category.label,
-                    via = cr.via,
-                    raw = text
-                )
-            }
-        }
-    }
 }
 

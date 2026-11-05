@@ -26,6 +26,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.notifyledger.data.LedgerRepository
 import com.example.notifyledger.judge.JudgeChain
 import com.example.notifyledger.judge.JudgeProvider
+import com.example.notifyledger.judge.Verdict
 import com.example.notifyledger.model.Category
 import com.example.notifyledger.model.LedgerEntry
 import com.example.notifyledger.model.LearnedRule
@@ -295,14 +296,24 @@ class MainActivity : AppCompatActivity() {
         pendingDiscards.clear()
         val ignoreRules = rules.filter { it.merchant.startsWith("@ignore:") }.map { it.merchant.removePrefix("@ignore:") }
         (if (segs.isNotEmpty()) segs else listOf(text)).forEach { seg ->
-            val hitIgnore = ignoreRules.firstOrNull { seg.contains(it, ignoreCase = true) }
-            if (hitIgnore != null) {
-                pendingDiscards.add(seg to "用户忽略规则: " + hitIgnore)
-                return@forEach
+            // §2.6: 粘贴路径也改走与通知/OCR 同一套 JudgeChain(忽略规则优先, 本地规则判定),
+            // 三入口判定逻辑收口在判断层, 不再各自内联
+            when (val v = chain.judge(seg, null, ignoreRules)) {
+                is Verdict.Keep -> pendingKeeps.add(
+                    PayNotifyParser.JudgeResult(
+                        verdict = "keep",
+                        amount = v.entry.amount,
+                        merchant = v.entry.merchant,
+                        source = v.entry.source,
+                        time = null,
+                        category = v.entry.category,
+                        via = v.via,
+                        raw = v.entry.raw
+                    )
+                )
+                is Verdict.Discard -> pendingDiscards.add(seg to v.reason)
+                Verdict.Abstain -> pendingDiscards.add(seg to JudgeChain.ABSTAIN_ALL_REASON)
             }
-            val v = PayNotifyParser.judge(seg, rules.filter { !it.merchant.startsWith("@ignore:") })
-            if (v.verdict == "keep") pendingKeeps.add(v)
-            else pendingDiscards.add(seg to (v.reason ?: "非支付"))
         }
         if (pendingKeeps.isEmpty()) {
             tvPasteNote.text = "未识别到可入账的支付信息: " + (pendingDiscards.firstOrNull()?.second ?: "非支付")
