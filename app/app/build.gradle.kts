@@ -52,6 +52,9 @@ dependencies {
     implementation("com.google.android.material:material:1.14.0")
     implementation("androidx.recyclerview:recyclerview:1.4.0")
 
+    // 评审 §2.6: 4 页签拆 Fragment/ViewModel, 引入 fragment-ktx (Fragment + viewModels 扩展)
+    implementation("androidx.fragment:fragment-ktx:1.8.0")
+
     // ML Kit 本地 OCR(离线): chinese 语言包(v2 API, 含 TextRecognizer 接口与 Options)
     implementation("com.google.android.gms:play-services-mlkit-text-recognition-chinese:16.0.0")
     implementation("androidx.exifinterface:exifinterface:1.3.6")

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/pageBill"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView style="@style/PageTitle" android:text="@string/bill_title" />
+        <EditText
+            android:id="@+id/billSearch"
+            style="@style/Field"
+            android:layout_width="match_parent"
+            android:hint="@string/hint_bill_search"
+            android:background="@color/surface_primary"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical">
+            <Spinner
+                android:id="@+id/fCat"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:entries="@array/category_entries"
+                android:backgroundTint="@color/text_tertiary" />
+            <Spinner
+                android:id="@+id/fTime"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:layout_marginStart="10dp"
+                android:entries="@array/time_range_entries"
+                android:backgroundTint="@color/text_tertiary" />
+            <View
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="1px" />
+            <Button
+                android:id="@+id/btnCsv"
+                style="@style/BtnSecondary"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:text="@string/btn_csv" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/surface_secondary"
+            android:padding="16dp"
+            android:layout_marginTop="14dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/stats_title"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary" />
+            <TextView
+                android:id="@+id/tvMonthTotal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="¥0.00"
+                android:textSize="34sp"
+                android:textStyle="bold"
+                android:textColor="@color/accent_primary"
+                android:fontFamily="sans-serif"
+                android:layout_marginTop="4dp" />
+            <TextView
+                android:id="@+id/tvBillCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="共 0 笔"
+                android:textSize="14sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <TextView
+            style="@style/SectionTitle"
+            android:text="@string/ledger_title" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvEntries"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:background="@color/surface_primary" />
+    </LinearLayout>
+</ScrollView>

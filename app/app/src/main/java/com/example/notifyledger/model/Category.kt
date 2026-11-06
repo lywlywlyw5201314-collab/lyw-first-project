@@ -9,6 +9,9 @@ enum class Category(val label: String) {
     OTHER("其他");
 
     companion object {
+        /** 分类中文标签(与枚举序一致), 供弹窗选择器/规则页共用; 评审 §2.6 自 MainActivity 下沉至此。 */
+        val CAT_LABELS: List<String> = entries.map { it.label }
+
         /** 按中文标签解析, 找不到返回 OTHER */
         fun fromLabel(label: String?): Category =
             entries.firstOrNull { it.label == label } ?: OTHER

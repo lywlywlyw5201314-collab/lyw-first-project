@@ -29,6 +29,8 @@ object JudgeProvider {
     }
 
     /** 取/建 applicationContext 维度的 [LedgerRepository] 单例(双重检查, 线程安全)。 */
+    fun sharedRepo(context: Context): LedgerRepository = repoFor(context)
+
     private fun repoFor(context: Context): LedgerRepository {
         val ctx = context.applicationContext
         cached.firstOrNull { it.first === ctx }?.let { return it.second }
